@@ -30,6 +30,10 @@ Não foram implementados Gemini real, scraping automático, comparação de font
 
 O código inicial foi produzido com assistência automatizada, não comprova contribuições individuais dos quatro alunos. Cada integrante deverá assumir suas tarefas, registrar commits próprios e explicar alterações e testes.
 
+## Deploy de demonstração (27/10/2026, branch feat/deploy-render)
+
+Preparação para Render gratuito descrita em `docs/decisoes/0001-deploy-render.md`: Dockerfile único (Angular servido pela API), `render.yaml` com PostgreSQL gratuito, migração `Inicial` no lugar de `EnsureCreated`, chaves de sessão no banco, porta via `PORT`, conversão de URL `postgresql://` com testes (RED com 2 falhas esperadas, depois GREEN). Localmente: 24 testes aprovados em Release com zero avisos e build Angular de produção aprovado. Docker não estava disponível localmente: imagem, migração em PostgreSQL vazio e `Test-Api.ps1` contra o container ficam com o job `container` da CI. A URL pública e o banco expiram conforme os limites do plano gratuito.
+
 ## Próxima sessão
 
 1. Aceitar convites, conferir CI e executar B01 com PostgreSQL na máquina dos integrantes.

@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Authentication;
 
 using Microsoft.AspNetCore.Authentication.Cookies;
 
+using Microsoft.AspNetCore.DataProtection;
+
 using Microsoft.AspNetCore.Identity;
 
 using Microsoft.EntityFrameworkCore;
@@ -12,10 +14,15 @@ using RadarPlural.Api;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.WebHost.UseUrls("http://localhost:5080");
+// Plataformas de hospedagem informam a porta em PORT; localmente a API continua em localhost:5080.
+var port = Environment.GetEnvironmentVariable("PORT");
+builder.WebHost.UseUrls(string.IsNullOrWhiteSpace(port) ? "http://localhost:5080" : $"http://0.0.0.0:{port}");
 builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestBodySize = 32768);
 
-builder.Services.AddDbContext<AppDb>(o => o.UseNpgsql(builder.Configuration.GetConnectionString("Default") ?? throw new InvalidOperationException("Configure ConnectionStrings__Default para PostgreSQL.")));
+builder.Services.AddDbContext<AppDb>(o => o.UseNpgsql(DatabaseUrl.ToNpgsql(builder.Configuration.GetConnectionString("Default") ?? throw new InvalidOperationException("Configure ConnectionStrings__Default para PostgreSQL."))));
+
+// Chaves que protegem o cookie ficam no banco: reinício ou novo deploy do container não derruba as sessões.
+builder.Services.AddDataProtection().PersistKeysToDbContext<AppDb>().SetApplicationName("coreletter");
 
 builder.Services.AddSingleton<IPasswordHasher<Member>, PasswordHasher<Member>>();
 
@@ -69,15 +76,19 @@ app.Use(async (context, next) =>
     await next();
 });
 
+// Em produção o build Angular é copiado para wwwroot: front e API na mesma origem, sem CORS.
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
-if (app.Environment.IsDevelopment())
+// Migrações versionadas em todos os ambientes; o administrador é promovido só se a conta já existir.
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDb>();
-    await db.Database.EnsureCreatedAsync();
+    await db.Database.MigrateAsync();
     var adminEmail = builder.Configuration["BootstrapAdminEmail"];
     if (!string.IsNullOrWhiteSpace(adminEmail))
     {

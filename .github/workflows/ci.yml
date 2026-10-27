@@ -59,3 +59,39 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
       - run: npm run build
+  container:
+    # Valida a imagem de deploy: build Angular + API, migrações num PostgreSQL vazio e front servido pela API.
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: coreletter_ci
+          POSTGRES_USER: coreletter_ci
+          POSTGRES_PASSWORD: disposable-ci-only-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U coreletter_ci -d coreletter_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 15
+    steps:
+      - uses: actions/checkout@v5
+      - run: docker build -t coreletter .
+      - name: Iniciar container
+        # Development aqui so para o cookie aceitar http no teste; em producao o cookie exige https.
+        run: |
+          docker run -d --name coreletter --network host             -e ASPNETCORE_ENVIRONMENT=Development -e PORT=5080             -e "ConnectionStrings__Default=postgresql://coreletter_ci:disposable-ci-only-password@localhost:5432/coreletter_ci"             coreletter
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://localhost:5080/api/health; then break; fi
+            sleep 2
+          done
+          curl --fail --silent http://localhost:5080/ | grep -q "<app-root>"
+      - name: Testar API no container
+        shell: pwsh
+        run: ./scripts/Test-Api.ps1
+      - name: Logs do container
+        if: always()
+        run: docker logs coreletter || true
+
