@@ -31,7 +31,7 @@ Os testes atuais verificam regras puras: links, limite de orçamento, contribui�
 ## Limites e próximos passos
 
 - UsageBudget é domínio demonstrativo em memória, NÃO conectado a assinaturas, endpoints ou IA. Não é ledger financeiro de produção; faltam persistência transacional, períodos, reservas/liquidação/estorno, idempotência com verificação de payload e testes PostgreSQL. RN01/RN03 são cálculos iniciais, não validação de rentabilidade real.
-- Não houve teste de integração PostgreSQL até o serviço local estar disponível. Antes de aceitar login/feed, executar cenário completo em banco real e teste de permissões entre duas contas.
+- O cenário scripts/Test-Api.ps1 passou com PostgreSQL real descartável na CI inicial (run40426458380). Ele cobre permissões entre contas e isolamento de salvos; o fluxo visual e a moderação como administrador continuam no roteiro manual. O engine Docker local não estava disponível nesta sessão.
 - Rate limit em memória por IP60/min para login/cadastro e operações autenticadas. Não substitui proteção distribuída, auditoria e política de recuperação de conta em produção.
 - Cadastro aberto apenas para demonstração local; sem confirmação de e-mail ou recuperação de senha. Sem dados pessoais reais no demo.
 - Link é armazenado como referência. Servidor não baixa a URL. Frontend deve abrir com noopener/noreferrer. Busca de metadados futura exige proteção SSRF.

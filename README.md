@@ -4,7 +4,7 @@ Comunidade de tecnologia e IA para compartilhar links de notícias, podcasts e m
 
 ## Entrega inicial
 
-Base em construção: ASP.NET Core .NET 10, PostgreSQL e Angular. O primeiro incremento cobre autenticação, feed com filtros e paginação, publicação/exclusão, salvamento privado e denúncia/moderação. Consulte backend/API.md para os contratos e docs/HANDOFF.md para a validação efetivamente realizada.
+Base inicial publicada: ASP.NET Core .NET 10, PostgreSQL e Angular. O primeiro incremento cobre autenticação, feed com filtros e paginação, publicação/exclusão, salvamento privado e denúncia/moderação. [CI inicial aprovada](https://github.com/Pemonition/Coreletter/actions/runs/40426458380), incluindo cenário de API com PostgreSQL. Consulte backend/API.md para os contratos e docs/HANDOFF.md para limites e validações.
 
 Comparação premium com IA, scraping controlado e integração financeira persistente são próximas entregas. Compartilhar uma URL não baixa seu conteúdo. Não há transcrição de áudio, cobrança real, postagem em redes sociais ou IA real conectada nesta base.
 
@@ -50,6 +50,16 @@ Isso executa os testes do back-end e o build Angular; testes com PostgreSQL e fl
 Com a API e um banco descartável em execução, `pwsh -File scripts/Test-Api.ps1` verifica cadastro, publicação, permissões e isolamento de salvos. Ele cria contas fictícias e remove a publicação de teste. A CI executa esse cenário usando PostgreSQL descartável.
 
 ## Colaboração
+
+Repositório: https://github.com/Pemonition/Coreletter. Para a equipe iniciar:
+
+```powershell
+Set-Location C:\Users\$env:USERNAME\Dev
+git clone https://github.com/Pemonition/Coreletter.git
+Set-Location Coreletter
+```
+
+Se a pasta já existe, use-a e atualize a branch; não clone por cima. Aceite o convite do GitHub para enviar branches. Abra sua tarefa em https://github.com/Pemonition/Coreletter/issues antes de editar. As etapas de dependências, banco e execução estão acima.
 
 Hugo (`Pemonition`) assume tech lead. Veja docs/EQUIPE.md e docs/BACKLOG.md para responsabilidades e tarefas futuras por nível. Davidy (`ddanjos`) é o sênior, Lindomar (`LindomarSSJ`) é o júnior e Henrique (`hikmiau`) é o iniciante. Todos devem contribuir com código próprio, revisão e entendimento; não atribuir automaticamente a humanos a autoria do código gerado por IA.
 
