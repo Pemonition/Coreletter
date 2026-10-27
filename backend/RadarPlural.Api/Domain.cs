@@ -1,10 +1,12 @@
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace RadarPlural.Api;
 
 
-public sealed class AppDb(DbContextOptions<AppDb> options) : DbContext(options)
+public sealed class AppDb(DbContextOptions<AppDb> options) : DbContext(options), IDataProtectionKeyContext
 {
+    public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();
     public DbSet<Member> Members => Set<Member>();
     public DbSet<Post> Posts => Set<Post>();
     public DbSet<SavedPost> Saved => Set<SavedPost>();

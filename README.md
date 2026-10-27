@@ -37,7 +37,11 @@ Em um terceiro PowerShell na raiz:
 .\scripts\Start-Web.ps1
 ```
 
-Abra http://localhost:4200. API em http://localhost:5080/api/health. Banco em localhost:5433, acessível somente na interface local. Cadastre uma conta fictícia para demonstrar. O esquema inicial usa EnsureCreated em Development; migrações versionadas são uma tarefa futura antes de evoluir o banco com dados mantidos. Não use esta configuração como deploy de produção.
+Abra http://localhost:4200. API em http://localhost:5080/api/health. Banco em localhost:5433, acessível somente na interface local. Cadastre uma conta fictícia para demonstrar. O esquema é criado por migrações versionadas do EF Core (`backend/RadarPlural.Api/Migrations`), aplicadas automaticamente quando a API inicia.
+
+Se o seu banco local foi criado antes das migrações (com `EnsureCreated`), a API vai falhar ao iniciar porque as tabelas já existem sem histórico. Como o banco local só tem dados fictícios, recrie-o uma vez com `docker compose down -v` e `.\scripts\Start-Database.ps1`.
+
+Para criar uma nova migração depois de alterar entidades: `dotnet tool restore` e `dotnet ef migrations add NomeDaMudanca --project backend/RadarPlural.Api` (com `ConnectionStrings__Default` definido). Revise o arquivo gerado na PR.
 
 Para validar a base:
 
@@ -48,6 +52,22 @@ Para validar a base:
 Isso executa os testes do back-end e o build Angular; testes com PostgreSQL e fluxo no navegador devem ser registrados separadamente quando executados. Para parar o banco sem apagar dados: `docker compose stop`. Não use exclusão de volumes se quiser manter os dados.
 
 Com a API e um banco descartável em execução, `pwsh -File scripts/Test-Api.ps1` verifica cadastro, publicação, permissões e isolamento de salvos. Ele cria contas fictícias e remove a publicação de teste. A CI executa esse cenário usando PostgreSQL descartável.
+
+## Demonstração na nuvem (Render, plano gratuito)
+
+A pasta raiz tem `Dockerfile` e `render.yaml`. Uma única imagem compila o Angular e o entrega pela própria API, então front e API ficam na mesma origem. Assim o cookie `SameSite=Strict` e a checagem de `Origin` continuam valendo, sem CORS. O Blueprint cria o PostgreSQL gratuito e o serviço web e liga um ao outro sem nenhuma senha no Git.
+
+1. Entrar em https://render.com com a conta do GitHub do tech lead.
+2. **New → Blueprint** → repositório `Coreletter` → branch `main`.
+3. Deixar `BootstrapAdminEmail` vazio no primeiro deploy e clicar em **Apply**.
+4. Abrir a URL `https://<servico>.onrender.com`, cadastrar a conta de administração da demonstração, preencher `BootstrapAdminEmail` com esse e-mail em **Environment** e salvar (o serviço reinicia e promove a conta).
+
+Limites do plano gratuito, a considerar no ensaio da apresentação:
+- O serviço hiberna após cerca de 15 minutos sem acesso; o primeiro acesso depois disso leva perto de 1 minuto.
+- O PostgreSQL gratuito do Render **expira 30 dias após a criação**. Antes disso, migre para outro Postgres (por exemplo, Neon gratuito) trocando apenas a variável `ConnectionStrings__Default` no painel; URLs `postgresql://` são aceitas.
+- Use somente contas e conteúdos fictícios: a URL é pública.
+
+Decisão registrada em `docs/decisoes/0001-deploy-render.md`.
 
 ## Colaboração
 
