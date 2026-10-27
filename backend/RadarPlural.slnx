@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="RadarPlural.Api/RadarPlural.Api.csproj" />
+  <Project Path="RadarPlural.Tests/RadarPlural.Tests.csproj" />
+</Solution>

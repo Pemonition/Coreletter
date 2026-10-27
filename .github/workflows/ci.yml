@@ -1,0 +1,61 @@
+name: Validar projeto
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: coreletter_ci
+          POSTGRES_USER: coreletter_ci
+          POSTGRES_PASSWORD: disposable-ci-only-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U coreletter_ci -d coreletter_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - run: dotnet test backend/RadarPlural.slnx --configuration Release
+      - name: Iniciar API com PostgreSQL descartavel
+        env:
+          ASPNETCORE_ENVIRONMENT: Development
+          ConnectionStrings__Default: Host=localhost;Port=5432;Database=coreletter_ci;Username=coreletter_ci;Password=disposable-ci-only-password
+        run: |
+          dotnet run --no-build --no-launch-profile --configuration Release --project backend/RadarPlural.Api > /tmp/coreletter-api.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://localhost:5080/api/health; then exit 0; fi
+            sleep 2
+          done
+          cat /tmp/coreletter-api.log
+          exit 1
+      - name: Testar API e isolamento entre contas
+        shell: pwsh
+        run: ./scripts/Test-Api.ps1
+      - name: Diagnostico de falha da API
+        if: failure()
+        run: cat /tmp/coreletter-api.log || true
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.21.0'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run build

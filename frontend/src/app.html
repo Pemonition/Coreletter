@@ -1,0 +1,304 @@
+<header class="topbar">
+  <a class="brand" href="/" aria-label="Coreletter início"
+    ><span class="brand-icon">◉</span> Core<span>letter</span></a
+  ><span class="preview">PROJETO TCC · DEMONSTRAÇÃO</span>
+  <div class="account">
+    @if(user();as u){<span class="username">{{u.displayName}}</span
+    ><button class="quiet" (click)="logout()">Sair</button>}@else{<button
+      class="quiet"
+      (click)="authOpen=true;register=false"
+    >
+      Entrar</button
+    ><button class="primary small" (click)="authOpen=true;register=true">
+      Criar conta</button
+    >}
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="side-label">SEU ESPAÇO</div>
+    <button [class.active]="view==='feed'" (click)="select('feed')">
+      <span>◫</span> Feed da comunidade</button
+    ><button [class.active]="view==='saved'" (click)="select('saved')">
+      <span>◇</span> Itens salvos</button
+    >@if(user()?.isAdmin){<button
+      [class.active]="view==='moderation'"
+      (click)="select('moderation')"
+    >
+      <span>⚑</span> Moderação</button
+    >}
+    <div class="side-note">
+      <span class="dot"></span> Curiosidade em comunidade
+      <p>Descubra perspectivas. Compartilhe boas fontes.</p>
+    </div>
+  </aside>
+  <main>
+    <section class="hero">
+      <div>
+        <div class="eyebrow">UM RADAR. MUITAS PERSPECTIVAS.</div>
+        <h1>Boas descobertas<br />merecem circular.</h1>
+        <p>
+          Notícias, podcasts e músicas compartilhados por pessoas curiosas como
+          você.
+        </p>
+      </div>
+      <div class="orbit" aria-hidden="true">
+        <span>✦</span><i>◉</i><b>↗</b>
+      </div>
+    </section>
+    @if(error()){
+    <div class="message error" role="alert">
+      {{error()}}
+      <button (click)="error.set('')" aria-label="Fechar erro">×</button>
+    </div>
+    }@if(notice()){
+    <div class="message success" role="status">
+      {{notice()}}
+      <button (click)="notice.set('')" aria-label="Fechar aviso">×</button>
+    </div>
+    }
+    <div class="section-heading">
+      <div>
+        <h2>
+          {{view==='saved'?'Sua coleção':view==='moderation'?'Central de
+          moderação':'No radar da comunidade'}}
+        </h2>
+        <p>
+          {{view==='saved'?'Descobertas que você quer
+          revisitar.':view==='moderation'?'Analise as denúncias antes de ocultar
+          conteúdo.':'Mais recentes primeiro. Você escolhe o que explorar.'}}
+        </p>
+      </div>
+      @if(view!=='moderation'){<button class="primary" (click)="share()">
+        ＋ Compartilhar descoberta</button
+      >}
+    </div>
+    @if(view==='feed'){
+    <form class="filters" (ngSubmit)="filter()">
+      <label
+        ><span>Explorar tema</span
+        ><input
+          [(ngModel)]="topic"
+          name="topic"
+          placeholder="Ex.: inteligência artificial" /></label
+      ><label
+        ><span>Formato</span
+        ><select [(ngModel)]="type" name="type">
+          <option value="">Todos os formatos</option>
+          <option value="article">Notícias</option>
+          <option value="podcast">Podcasts</option>
+          <option value="music">Músicas</option>
+        </select></label
+      ><button class="secondary" type="submit">Filtrar</button>
+    </form>
+    } @if(loading()){
+    <div class="empty" role="status">Carregando descobertas…</div>
+    }@else if(view==='moderation'){@for(report of reports();track report.id){
+    <article class="report">
+      <span class="badge">Denúncia</span>
+      <p>{{report.reason}}</p>
+      <small
+        >Publicação: {{report.postId}} · {{report.createdAt | date:'dd/MM/yyyy
+        HH:mm'}}</small
+      ><button class="secondary" (click)="hide(report.postId)">
+        Ocultar publicação
+      </button>
+    </article>
+    }@empty{
+    <div class="empty">Nenhuma denúncia para analisar.</div>
+    }}@else{
+    <div class="cards">
+      @for(post of posts();track post.id){
+      <article class="card">
+        <div class="card-meta">
+          <span
+            class="badge"
+            [class.podcast]="post.type==='podcast'"
+            [class.music]="post.type==='music'"
+            >{{label(post.type)}}</span
+          ><span class="topic">{{post.topic}}</span>
+        </div>
+        <a
+          class="post-title"
+          [href]="safeUrl(post.url)"
+          target="_blank"
+          rel="noopener noreferrer"
+          >{{post.title}} <span>↗</span></a
+        ><span class="source">{{domain(post.url)}}</span>
+        <p class="comment">{{post.comment}}</p>
+        <div class="author">
+          <span class="avatar"
+            >{{post.authorName.slice(0,1).toUpperCase()}}</span
+          >
+          <div>
+            <strong>{{post.authorName}}</strong
+            ><time>{{post.createdAt | date:'dd/MM/yyyy · HH:mm'}}</time>
+          </div>
+        </div>
+        <div class="card-actions">
+          <button (click)="save(post)" [attr.aria-pressed]="post.isSaved">
+            {{post.isSaved?'◆ Salvo':'◇ Salvar'}}</button
+          ><button (click)="report(post)">Denunciar</button
+          >@if(user()?.id===post.authorId){<button
+            class="danger"
+            (click)="remove(post)"
+          >
+            Excluir</button
+          >}
+        </div>
+      </article>
+      }@empty{
+      <div class="empty">
+        <span>✦</span>
+        <h3>A próxima descoberta pode ser sua.</h3>
+        <p>
+          {{view==='saved'?'Salve publicações do feed para encontrá-las
+          aqui.':'Nenhuma publicação encontrada. Compartilhe um link ou ajuste
+          os filtros.'}}
+        </p>
+      </div>
+      }
+    </div>
+    @if(view==='feed'&&total>pageSize){
+    <nav class="pagination" aria-label="Paginação">
+      <button class="secondary" [disabled]="page===1" (click)="move(-1)">
+        ← Anterior</button
+      ><span>Página {{page}} · {{total}} descobertas</span
+      ><button
+        class="secondary"
+        [disabled]="page*pageSize>=total"
+        (click)="move(1)"
+      >
+        Próxima →
+      </button>
+    </nav>
+    }}
+    <footer>
+      Fontes externas expressam a visão de seus autores. Consulte o conteúdo
+      original e compare perspectivas.<br /><span
+        >Comparação com IA e planos pagos: previstos para uma próxima
+        entrega.</span
+      >
+    </footer>
+  </main>
+</div>
+@if(authOpen){
+<div class="overlay">
+  <section
+    class="modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="auth-title"
+  >
+    <button class="close" (click)="authOpen=false" aria-label="Fechar">
+      ×
+    </button>
+    <div class="eyebrow">FAÇA PARTE DO RADAR</div>
+    <h2 id="auth-title">
+      {{register?'Boas conexões começam aqui.':'Bem-vindo de volta.'}}
+    </h2>
+    <p>Compartilhe descobertas e monte sua coleção.</p>
+    @if(error()){
+    <p class="inline-error" role="alert">{{error()}}</p>
+    }
+    <form ngNativeValidate (ngSubmit)="authenticate()">
+      @if(register){<label
+        >Seu nome<input
+          name="displayName"
+          [(ngModel)]="displayName"
+          required
+          maxlength="80"
+          autocomplete="name" /></label
+      >}<label
+        >E-mail<input
+          name="email"
+          type="email"
+          [(ngModel)]="email"
+          required
+          autocomplete="email" /></label
+      ><label
+        >Senha<input
+          name="password"
+          type="password"
+          [(ngModel)]="password"
+          required
+          [minlength]="register?10:1"
+          [attr.autocomplete]="register?'new-password':'current-password'" /></label
+      >@if(register){<small
+        >Use pelo menos 10 caracteres. Não utilize sua senha pessoal na
+        demonstração.</small
+      >}<button class="primary wide" [disabled]="busy()">
+        {{busy()?'Aguarde…':register?'Criar minha conta':'Entrar'}}
+      </button>
+    </form>
+    <button class="text-button" (click)="register=!register;error.set('')">
+      {{register?'Já tenho uma conta':'Quero criar minha conta'}}
+    </button>
+  </section>
+</div>
+} @if(shareOpen){
+<div class="overlay">
+  <section
+    class="modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="share-title"
+  >
+    <button class="close" (click)="shareOpen=false" aria-label="Fechar">
+      ×
+    </button>
+    <div class="eyebrow">UMA DESCOBERTA PUXA OUTRA</div>
+    <h2 id="share-title">O que entrou no seu radar?</h2>
+    <p>Compartilhe o link original e conte por que vale a atenção.</p>
+    @if(error()){
+    <p class="inline-error" role="alert">{{error()}}</p>
+    }
+    <form ngNativeValidate (ngSubmit)="publish()">
+      <label
+        >Link da fonte<input
+          name="url"
+          type="url"
+          [(ngModel)]="draft.url"
+          required
+          maxlength="2048"
+          placeholder="https://…" /></label
+      ><label
+        >Título<input
+          name="title"
+          [(ngModel)]="draft.title"
+          required
+          maxlength="200"
+      /></label>
+      <div class="form-row">
+        <label
+          >Formato<select name="format" [(ngModel)]="draft.type">
+            <option value="article">Notícia</option>
+            <option value="podcast">Podcast</option>
+            <option value="music">Música</option>
+          </select></label
+        ><label
+          >Tema<input
+            name="draftTopic"
+            [(ngModel)]="draft.topic"
+            required
+            maxlength="80"
+        /></label>
+      </div>
+      <label
+        >Por que compartilhar?<textarea
+          name="comment"
+          [(ngModel)]="draft.comment"
+          required
+          maxlength="2000"
+          rows="3"
+        ></textarea></label
+      ><small
+        >Compartilhe conteúdo permitido. O link será publicado; o áudio não será
+        baixado ou analisado.</small
+      ><button class="primary wide" [disabled]="busy()">
+        {{busy()?'Publicando…':'Publicar na comunidade'}}
+      </button>
+    </form>
+  </section>
+</div>
+}
