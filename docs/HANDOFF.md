@@ -1,3 +1,11 @@
+## Frontend espacial — 12/11/2026
+
+Validação: 6 testes frontend aprovados, build produção aprovado (235,92 kB inicial), git diff --check aprovado. Inspeção visual no navegador ainda pendente; não equivale a teste de responsividade executado.
+
+Branch Pemonition: novo destaque visual com geometria CSS em perspectiva, esfera iluminada, anéis e cartões; refinamento de cards, foco visível, link para pular ao conteúdo e navegação móvel com quebra de linha. Sem modelo Blender, WebGL ou dependência nova. A animação é finita e não roda quando prefers-reduced-motion está ativo. As branches de histórias dos colegas não foram alteradas. Esta evolução visual aplica-se ao frontend preservado nesta branch; a conciliação com feat/tela-historias continua pendente.
+
+Evolução sugerida: Lindomar revisar layout real em celular/teclado e integrar ao frontend de histórias; Hugo definir modelo artístico; exportar GLB do Blender e só então avaliar carregamento sob demanda, fallback estático, peso e suporte a WebGL antes de incorporar. Nenhum modelo Blender foi criado nesta sessão.
+
 Vídeo demonstrativo renderizado em 12/11/2026: 26s Full HD sem áudio, em video/output-final/coreletter.mp4. PR rascunho #31 publicada com comentário para revisão dos colegas; main e branches remotas existentes preservadas.
 
 ## Continuidade — 12/11/2026, branch Pemonition

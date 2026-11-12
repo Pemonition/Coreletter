@@ -713,3 +713,29 @@ textarea {
     padding: 9px 11px;
   }
 }
+
+/* Spatial editorial visual: local CSS geometry, no downloaded assets. */
+:root { color:#193b36; background:#f1f4ef; }
+body { background:radial-gradient(ellipse at 90% 0%,#e3ece0,transparent 55%),#f4f6f1; }
+.layout { max-width:1600px; margin-inline:auto; }
+.hero { background:#123e35; color:#f4faef; border-radius:28px; min-height:350px; position:relative; isolation:isolate; overflow:hidden; padding:45px; box-shadow:0 22px 50px -34px #103e35aa; }
+.hero > div:first-child { position:relative; z-index:2; max-width:59%; }
+.hero h1 { font-size:clamp(32px,3.6vw,56px); line-height:1.08; letter-spacing:-2px; }
+.hero p { color:#c2d6ca; line-height:1.7; max-width:390px; }.hero .eyebrow { color:#c3e9a0; letter-spacing:2px; }
+.hero::before { content:''; position:absolute; inset:0; background-image:radial-gradient(#c5e3c433 1px,transparent 1px); background-size:28px 28px; pointer-events:none; }
+.discovery-3d { position:absolute; right:10px; top:10px; width:42%; height:330px; perspective:900px; pointer-events:none; }
+.spatial-scene { position:absolute; inset:0; transform-style:preserve-3d; transform:rotateX(-12deg) rotateY(-18deg); }
+.planet { position:absolute; width:190px; height:190px; left:calc(50% - 95px); top:65px; border-radius:50%; background:radial-gradient(circle at 28% 23%,#f0ffd8,#b8e98b 20%,#69ae71 47%,#245d48 75%,#102d2c); box-shadow:inset -12px -18px 25px #06271b66,18px 40px 50px #031c2980; display:grid; place-items:center; }
+.planet span { font-size:90px; font-weight:800; color:#174939; letter-spacing:-10px; text-shadow:1px 2px 1px #d7ffae; padding-right:10px; }
+.planet-ring { position:absolute; width:300px; height:300px; left:calc(50% - 150px); top:10px; border:2px solid #d3f5ae88; border-radius:50%; }
+.ring-one { transform:rotateX(66deg) rotateZ(-22deg); border:12px solid #bce9a433; box-shadow:0 0 0 1px #c8f5a766; }.ring-two { transform:rotateY(64deg) rotateX(16deg); }
+.floating-note { position:absolute; padding:13px 16px; border:1px solid #e0f5db70; border-radius:14px; background:#edf8e9; color:#214738; font-size:12px; font-weight:650; box-shadow:0 15px 25px #09271f55; transform:translateZ(70px) rotateZ(-8deg); }
+.note-one { top:48px; right:5px; }.note-two { bottom:55px; left:5px; transform:translateZ(90px) rotateZ(7deg); }
+.satellite { position:absolute; width:26px; height:26px; border-radius:50%; background:radial-gradient(circle at 25% 25%,#f5dfb3,#cb8b55 65%,#734431); left:28px; top:115px; }
+.card { border-radius:20px; border-color:#dce5dc; box-shadow:0 6px 20px -14px #244c3555; }.card:hover { border-color:#91b899; }
+.sidebar > button { border-radius:12px; min-height:44px; }.sidebar > button.active { background:#dcebdc; color:#1a5444; }.primary { border-radius:12px; min-height:44px; }.filters { border-radius:18px; }
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible { outline:3px solid #568a61; outline-offset:4px; }
+.skip-link { position:fixed; top:-100px; left:16px; z-index:100; background:white; color:#123e35; padding:16px; border-radius:10px; }.skip-link:focus { top:12px; }
+@media(prefers-reduced-motion:no-preference) { .spatial-scene { animation:spatial-drift 9s ease-in-out 2 alternate; } @keyframes spatial-drift { to { transform:rotateX(-5deg) rotateY(8deg) translateY(-7px); } } }
+@media(max-width:950px) { .hero { padding:30px; }.discovery-3d { transform:scale(.82); transform-origin:center right; width:43%; }.hero h1 { letter-spacing:-1px; } }
+@media(max-width:600px) { .hero { padding:28px 24px; min-height:510px; }.hero > div:first-child { max-width:100%; }.hero p { max-width:100%; }.discovery-3d { top:auto; bottom:-12px; right:0; width:100%; height:280px; transform:scale(.78); transform-origin:center bottom; }.hero h1 { font-size:36px; }.hero .eyebrow { font-size:9px; }.sidebar { flex-wrap:wrap; overflow:visible; }.sidebar > button { white-space:normal; font-size:12px; }.account { flex-wrap:wrap; }.topbar { min-height:76px; height:auto; padding-block:14px; }.section-heading { gap:12px; } }
