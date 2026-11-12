@@ -1,0 +1,13 @@
+// Lista de permissão do coletor (política: docs/decisoes/0002-ingestao.md).
+// Só feeds RSS/Atom públicos, publicados pelos próprios veículos para consumo por leitores.
+// Fora da lista de propósito: g1 e Folha respondem 403 a robôs identificados (testado em 12/11/2026). Não contornar.
+// Incluir ou remover fonte = PR revisada. Nunca colocar aqui URL enviada por usuário sem passar pela política.
+[
+  { "id": "tecnoblog",      "name": "Tecnoblog",           "url": "https://tecnoblog.net/feed/",                                      "topic": "tecnologia" },
+  { "id": "canaltech",      "name": "Canaltech",           "url": "https://canaltech.com.br/rss/",                                    "topic": "tecnologia" },
+  { "id": "olhar-digital",  "name": "Olhar Digital",       "url": "https://olhardigital.com.br/feed/",                                "topic": "tecnologia" },
+  { "id": "tecmundo",       "name": "TecMundo",            "url": "https://rss.tecmundo.com.br/feed",                                 "topic": "tecnologia" },
+  { "id": "convergencia-digital", "name": "Convergência Digital", "url": "https://convergenciadigital.com.br/feed/",                "topic": "tecnologia" },
+  { "id": "mobile-time",    "name": "Mobile Time",         "url": "https://www.mobiletime.com.br/feed/",                              "topic": "tecnologia" },
+  { "id": "agencia-brasil", "name": "Agência Brasil",      "url": "https://agenciabrasil.ebc.com.br/rss/ultimasnoticias/feed.xml",    "topic": "geral" }
+]

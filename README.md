@@ -69,6 +69,26 @@ Limites do plano gratuito, a considerar no ensaio da apresentação:
 
 Decisão registrada em `docs/decisoes/0001-deploy-render.md`.
 
+## Coletor de notícias (RSS/Atom)
+
+O projeto `backend/RadarPlural.Worker` lê os feeds das fontes aprovadas em `backend/RadarPlural.Worker/fontes.json`, grava título, link, data e um trecho curto na tabela `FeedItems` e termina. A API mostra o resultado em `GET /api/news`. A política (fontes, SSRF, limites, direito autoral) está em `docs/decisoes/0002-ingestao.md`.
+
+```powershell
+# Ver o que seria coletado, sem banco:
+dotnet run --project backend/RadarPlural.Worker -- --dry-run
+# Gravar no banco local (a API precisa ter rodado uma vez para aplicar as migrações):
+$env:ConnectionStrings__Default = "Host=localhost;Port=5433;Database=radarplural;Username=radarplural;Password=<a do .env>"
+dotnet run --project backend/RadarPlural.Worker
+# Só uma fonte:
+dotnet run --project backend/RadarPlural.Worker -- --fonte tecnoblog
+```
+
+Rodar de novo não duplica notícias. Uma fonte fora do ar não interrompe as outras.
+
+Na nuvem, o GitHub Actions roda o coletor a cada 3 horas (`.github/workflows/ingestao.yml`). Para gravar no banco do Render, crie o secret **INGESTAO_DATABASE_URL** em *Settings → Secrets and variables → Actions*, com a *External Database URL* do PostgreSQL do Render terminada em `?sslmode=require`. Sem o secret, o workflow roda só `--dry-run`.
+
+Para incluir uma fonte: o site precisa publicar RSS/Atom em https e não bloquear robôs. Use a URL final, depois de redirecionamentos (com ou sem `www`), porque o coletor não segue redirecionamento para fora da lista. Teste com `--dry-run --fonte <id>` e abra PR.
+
 ## Colaboração
 
 Repositório: https://github.com/Pemonition/Coreletter. Para a equipe iniciar:
