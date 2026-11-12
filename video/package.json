@@ -1,0 +1,1 @@
+{"name":"coreletter-video","private":true,"type":"module","scripts":{"test":"node --test *.test.mjs","demo":"node generate.mjs demo.json output","check":"hyperframes check output --json","preview":"hyperframes preview output","render":"hyperframes render output --output output/coreletter.mp4"},"devDependencies":{"hyperframes":"0.9.40"},"dependencies":{"gsap":"3.14.2"}}
