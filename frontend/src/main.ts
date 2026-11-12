@@ -3,6 +3,8 @@ import { bootstrapApplication } from "@angular/platform-browser";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
 import { CollectionRadar } from "./collection-radar";
+import { BrandMark } from "./brand";
+import { SpatialHero } from "./hero";
 
 interface User {
   id: string;
@@ -31,7 +33,7 @@ interface Report {
 @Component({
   selector: "app-root",
   standalone: true,
-  imports: [CommonModule, FormsModule, CollectionRadar],
+  imports: [CommonModule, FormsModule, CollectionRadar, BrandMark, SpatialHero],
   templateUrl: "./app.html",
 })
 class App {
