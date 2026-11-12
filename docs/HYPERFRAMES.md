@@ -35,6 +35,6 @@ Referência oficial: https://github.com/heygen-com/hyperframes .
 
 ## Validação desta sessão
 
-3 testes do gerador aprovados. HyperFrames 0.9.40: check com 4 amostras, runtime/layout/contraste aprovados (17 verificações de contraste), craft desativado nessa rodada. Quatro avisos pedem separar as cenas em subcomposições; permanecem como melhoria editorial. Prévia iniciada em http://localhost:4367/#project/output-final. Render MP4 em andamento ao registrar esta etapa; não considerar concluído sem conferir o resultado. O primeiro check encontrou ausência de timeline: corrigida com GSAP local fixado no lockfile.
+3 testes do gerador aprovados. HyperFrames 0.9.40: check com 4 amostras, runtime/layout/contraste aprovados (17 verificações de contraste), craft desativado nessa rodada. Quatro avisos pedem separar as cenas em subcomposições; permanecem como melhoria editorial. Prévia iniciada em http://localhost:4367/#project/output-final. Render MP4 concluído: 26 segundos, 1920×1080, 30 fps, qualidade draft, sem áudio; arquivo local video/output-final/coreletter.mp4 (não versionado). FFmpeg/FFprobe do aplicativo instalado foram usados apenas no processo. Prévia inspecionada por captura; o artefato foi validado pelo renderizador. O primeiro check encontrou ausência de timeline: corrigida com GSAP local fixado no lockfile.
 
 No Windows, `pwsh -File Render-Local.ps1` usa FFmpeg/FFprobe já incluídos no HyperFrames desktop quando disponíveis, sem alterar o PATH permanente. Caso ausentes, informa a dependência e não instala nada.

@@ -1,3 +1,5 @@
+Vídeo demonstrativo renderizado em 12/11/2026: 26s Full HD sem áudio, em video/output-final/coreletter.mp4. PR rascunho #31 publicada com comentário para revisão dos colegas; main e branches remotas existentes preservadas.
+
 ## Continuidade — 12/11/2026, branch Pemonition
 
 Alterações locais de questionário/coleta preservadas em dee2258. Validação desta sessão: 55 testes backend aprovados, 3 de PostgreSQL pulados; 6 frontend aprovados e build desenvolvimento aprovado. Não confundir com validação PostgreSQL histórica abaixo.
