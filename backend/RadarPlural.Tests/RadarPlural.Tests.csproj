@@ -24,6 +24,7 @@
     <ProjectReference Include="..\RadarPlural.Ingestion\RadarPlural.Ingestion.csproj" />
     <ProjectReference Include="..\RadarPlural.Pipeline\RadarPlural.Pipeline.csproj" />
     <ProjectReference Include="..\RadarPlural.Infrastructure\RadarPlural.Infrastructure.csproj" />
+    <ProjectReference Include="..\RadarPlural.Domain\RadarPlural.Domain.csproj" />
   </ItemGroup>
 
 </Project>

@@ -5,11 +5,13 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 # Só os .csproj primeiro: o restore fica em cache enquanto as dependências não mudam.
+COPY backend/RadarPlural.Domain/RadarPlural.Domain.csproj backend/RadarPlural.Domain/
 COPY backend/RadarPlural.Ingestion/RadarPlural.Ingestion.csproj backend/RadarPlural.Ingestion/
 COPY backend/RadarPlural.Pipeline/RadarPlural.Pipeline.csproj backend/RadarPlural.Pipeline/
 COPY backend/RadarPlural.Infrastructure/RadarPlural.Infrastructure.csproj backend/RadarPlural.Infrastructure/
 COPY backend/RadarPlural.Worker/RadarPlural.Worker.csproj backend/RadarPlural.Worker/
 RUN dotnet restore backend/RadarPlural.Worker/RadarPlural.Worker.csproj
+COPY backend/RadarPlural.Domain/ backend/RadarPlural.Domain/
 COPY backend/RadarPlural.Ingestion/ backend/RadarPlural.Ingestion/
 COPY backend/RadarPlural.Pipeline/ backend/RadarPlural.Pipeline/
 COPY backend/RadarPlural.Infrastructure/ backend/RadarPlural.Infrastructure/

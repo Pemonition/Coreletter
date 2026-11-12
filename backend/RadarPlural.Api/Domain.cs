@@ -13,6 +13,8 @@ public sealed class AppDb(DbContextOptions<AppDb> options) : DbContext(options),
     public DbSet<Report> Reports => Set<Report>();
     public DbSet<FeedItem> FeedItems => Set<FeedItem>();
     public DbSet<Story> Stories => Set<Story>();
+    public DbSet<UsageMonth> UsageMonths => Set<UsageMonth>();
+    public DbSet<UsageReservation> UsageReservations => Set<UsageReservation>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -51,6 +53,23 @@ public sealed class AppDb(DbContextOptions<AppDb> options) : DbContext(options),
             e.Property(x => x.LastError).HasMaxLength(500);
             e.HasIndex(x => new { x.Status, x.LeaseUntil });
         });
+        // RN03: uso mensal por membro e reservas idempotentes (adaptador PgUsageLedger faz a reserva atômica em SQL).
+        b.Entity<UsageMonth>(e =>
+        {
+            e.HasKey(x => new { x.MemberId, x.Month });
+            e.Property(x => x.Month).HasMaxLength(7);
+            e.HasOne<Member>().WithMany().HasForeignKey(x => x.MemberId).OnDelete(DeleteBehavior.Cascade);
+            e.ToTable(t => t.HasCheckConstraint("CK_UsageMonths_Used", "\"Used\" >= 0"));
+        });
+        b.Entity<UsageReservation>(e =>
+        {
+            e.HasKey(x => x.Key);
+            e.Property(x => x.Month).HasMaxLength(7);
+            e.Property(x => x.Status).HasMaxLength(10);
+            e.HasIndex(x => new { x.MemberId, x.Month });
+            e.HasOne<Member>().WithMany().HasForeignKey(x => x.MemberId).OnDelete(DeleteBehavior.Cascade);
+        });
+        b.Entity<Member>().Property(x => x.PlanId).HasMaxLength(20).HasDefaultValue("free");
     }
 }
 public class Member
@@ -75,6 +94,8 @@ public class Member
         get;
         set;
     } = "";
+    // Plano de assinatura (RadarPlural.Domain.Billing.PlanCatalog). Sem pagamento real no TCC: o admin altera.
+    public string PlanId { get; set; } = "free";
     public bool IsAdmin
     {
         get;
@@ -191,6 +212,20 @@ public class FeedItem
     public string? DiscardReason { get; set; }
     public string Flags { get; set; } = "";
     public Guid? StoryId { get; set; }
+}
+public class UsageMonth
+{
+    public Guid MemberId { get; set; }
+    public string Month { get; set; } = "";
+    public int Used { get; set; }
+}
+public class UsageReservation
+{
+    public Guid Key { get; set; }
+    public Guid MemberId { get; set; }
+    public string Month { get; set; } = "";
+    public string Status { get; set; } = "reserved"; // reserved | settled | released
+    public DateTimeOffset CreatedAt { get; set; }
 }
 public class Story
 {
