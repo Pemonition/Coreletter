@@ -26,13 +26,14 @@ O contrato concreto da base está em `backend/API.md`. Mudanças devem atualizar
 | Monólito e banco único | Prazo de três semanas e equipe pequena | Gargalo medido |
 | Feed com filtros e paginação | Fluxo previsível e demonstrável | Evidência de uso justifica recomendações |
 | Compartilhamento manual primeiro | Valida utilidade sem depender de coleta externa | Núcleo estável e fontes permitidas definidas |
+| Coleta só de RSS/Atom de fontes aprovadas, por Worker agendado | Política de ingestão (decisoes/0002): feeds públicos, metadados curtos, travas de SSRF e limites | Fonte essencial sem feed, ou fontes de usuário |
 | IA simulada primeiro | Demonstração reproduzível sem API | Acesso e limites Gemini confirmados |
 | Planos e pagamento simulados | Testar regras sem cobrança real | Validação de mercado e requisitos comerciais |
 
 ## Segurança e qualidade
 Cookies de autenticação exigem atenção a CSRF, origem/CORS, HTTPS e configuração antes de exposição pública. Rever provisionamento de administrador e persistência de chaves. Limitar tamanho das entradas e requisições; não renderizar HTML externo arbitrário. Nunca registrar senhas, tokens ou chaves de API.
 
-Scraping futuro precisa de fontes e permissões definidas, prevenção de SSRF, limites de download, timeout e validação de redirecionamentos; não faz parte do simples cadastro de links. Conteúdo de fontes e usuários não pode instruir a IA a mudar regras ou expor dados.
+A coleta automática segue `docs/decisoes/0002-ingestao.md` (RSS/Atom de lista aprovada, `RadarPlural.Worker`). Raspagem de HTML ou fonte de usuário continua exigindo fontes e permissões definidas, prevenção de SSRF, limites de download, timeout e validação de redirecionamentos; não faz parte do simples cadastro de links. Conteúdo de fontes e usuários não pode instruir a IA a mudar regras ou expor dados.
 
 TDD é prioritário para regras de negócio e permissões. Testes de integração verificam persistência e isolamento; testes de interface focam comportamento relevante. Testar endpoints apenas em memória não comprova comportamento PostgreSQL: registrar essa limitação quando ocorrer.
 
