@@ -17,8 +17,9 @@ export const ROTULO_STATUS = {
   unica_fonte: "Só uma fonte",
   evidencia_insuficiente: "Sem evidência suficiente",
 };
-const TIPOS = ["abertura", "texto", "etapa", "comparacao", "fechamento"];
-const LIMITES = { titulo: 70, texto: 180, item: 70, itens: 4, afirmacoes: 4, fontes: 4, cenas: 20, total: 180 };
+const TIPOS = ["abertura", "texto", "etapa", "comparacao", "codigo", "fechamento"];
+const LIMITES = { titulo: 70, texto: 180, item: 70, itens: 4, afirmacoes: 4, fontes: 4, cenas: 20, total: 180, linhasCodigo: 16, colunasCodigo: 200, colunasVisiveis: 92 };
+export const LINGUAGENS = ["csharp", "sql", "ts", "js", "yaml"];
 
 // Marca (mesmos tokens de frontend/src/styles.css).
 export const MARCA = {
@@ -82,6 +83,24 @@ export function validarRoteiro(r) {
       if (!Array.isArray(c.itens) || c.itens.length > LIMITES.itens) erros.push(`${p}.itens: lista com até ${LIMITES.itens}`);
       else c.itens.forEach((it, j) => texto(it, `${p}.itens[${j}]`, LIMITES.item));
     }
+    if (c.tipo === "codigo") {
+      // Trecho real do repositório: o texto explica o porquê; o código é mostrado como está (só escapado).
+      texto(c.texto, `${p}.texto`, LIMITES.texto);
+      if (typeof c.arquivo !== "string" || !/^[\w./-]{3,100}$/.test(c.arquivo)) erros.push(`${p}.arquivo: caminho no repositório (ex.: backend/X/Y.cs)`);
+      if (!(Number.isInteger(c.linha) && c.linha >= 1)) erros.push(`${p}.linha: número da primeira linha do trecho`);
+      if (!LINGUAGENS.includes(c.linguagem)) erros.push(`${p}.linguagem: uma de ${LINGUAGENS.join(", ")}`);
+      if (typeof c.codigo !== "string" || !c.codigo.trim()) erros.push(`${p}.codigo: obrigatório`);
+      else {
+        const linhas = c.codigo.split("\n");
+        // Linha longa quebra na tela (com recuo), então o limite é de linhas VISUAIS: o trecho precisa caber.
+        const visuais = linhas.reduce((n, l) => n + Math.max(1, Math.ceil(l.length / LIMITES.colunasVisiveis)), 0);
+        if (visuais > LIMITES.linhasCodigo) erros.push(`${p}.codigo: até ${LIMITES.linhasCodigo} linhas na tela (tem ${visuais}); escolha o trecho essencial`);
+        linhas.forEach((l, j) => {
+          if (l.length > LIMITES.colunasCodigo) erros.push(`${p}.codigo linha ${j + 1}: até ${LIMITES.colunasCodigo} caracteres (tem ${l.length})`);
+          if (/\t/.test(l)) erros.push(`${p}.codigo linha ${j + 1}: use espaços, não tabulação`);
+        });
+      }
+    }
     if (c.tipo === "comparacao") {
       if (!Array.isArray(c.afirmacoes) || c.afirmacoes.length === 0 || c.afirmacoes.length > LIMITES.afirmacoes)
         erros.push(`${p}.afirmacoes: de 1 a ${LIMITES.afirmacoes}`);
@@ -130,6 +149,30 @@ export function roteiroDeComparacao(comparacao, { id, titulo } = {}) {
   return { versao: VERSAO_ROTEIRO, id: id ?? `historia-${String(comparacao.storyId).slice(0, 8)}`, titulo: tituloHistoria, cenas };
 }
 
+// Destaque de sintaxe mínimo: comentário, texto entre aspas, número e palavra-chave. Cada pedaço passa por escapar()
+// (o trecho pode conter "<" e "&", como em C# genérico ou SQL). Não é um parser: é só para o vídeo ficar legível.
+const PALAVRAS = {
+  csharp: "public private static async await return var new if else foreach for while in is not and or null true false class record sealed interface using namespace throw try catch decimal int string bool void readonly const with switch case default partial",
+  sql: "select from where and or not null insert into values update set on conflict do returning with as order by limit for skip locked is desc asc join",
+  ts: "const let async await return if else try catch new function export import from this null true false",
+  js: "const let async await return if else try catch new function export import from this null true false",
+  yaml: "apiVersion kind metadata spec name",
+};
+export function destacar(linha, linguagem) {
+  const palavras = new Set(PALAVRAS[linguagem].split(" "));
+  const comentario = linguagem === "sql" ? "--.*$" : linguagem === "yaml" ? "#.*$" : "//.*$";
+  const re = new RegExp(`(${comentario})|("(?:[^"\\\\]|\\\\.)*"|'(?:[^'\\\\]|\\\\.)*')|(\\b\\d[\\d.,]*\\b)|([A-Za-z_][\\w]*)`, "g");
+  let html = "", ultimo = 0;
+  for (const m of linha.matchAll(re)) {
+    html += escapar(linha.slice(ultimo, m.index));
+    const [t, com, str, num, pal] = m;
+    const cls = com ? "c-com" : str && !(linguagem === "sql" && str.startsWith('"')) ? "c-str" : num ? "c-num" : pal && palavras.has(linguagem === "sql" ? pal.toLowerCase() : pal) ? "c-kw" : null;
+    html += cls ? `<span class="${cls}">${escapar(t)}</span>` : escapar(t);
+    ultimo = m.index + t.length;
+  }
+  return html + escapar(linha.slice(ultimo));
+}
+
 // Linha do tempo: cada cena começa quando a anterior termina.
 export function tempos(roteiro) {
   let inicio = 0;
@@ -161,6 +204,16 @@ function cenaHtml(c, i) {
         )
         .join("")}</div>`;
       break;
+    case "codigo": {
+      const linhas = c.codigo.split("\n");
+      const largura = String(c.linha + linhas.length - 1).length;
+      const recuo = (l) => l.length - l.trimStart().length;
+      const pre = linhas
+        .map((l, j) => `<div class="l" style="--recuo:${recuo(l)}ch"><span class="ln">${String(c.linha + j).padStart(largura, " ")}</span><span class="tx">${destacar(l.trimStart(), c.linguagem) || " "}</span></div>`)
+        .join("");
+      corpo = `<div class="anima arquivo">${e(c.arquivo)}<span>:${c.linha}</span></div>${titulo("menor")}${textoP}<div class="anima codigo">${pre}</div>`;
+      break;
+    }
     case "fechamento":
       corpo = `<div class="aneis"><span></span><span></span></div>${titulo("grande")}${textoP}<div class="anima selo">coreletter</div>`;
       break;
@@ -199,6 +252,28 @@ export function composicao(roteiro) {
     .map(([s, [bg, fg]]) => `    .chip.${s} { background: ${bg}; color: ${fg}; }\n    .afirmacao.${s} { border-left-color: ${fg}; }`)
     .join("\n");
   const escala = vertical ? 1.1 : 1;
+  // Estilo e fonte de código só entram quando o roteiro tem cena de código (os outros vídeos ficam idênticos).
+  const temCodigo = roteiro.cenas.some((c) => c.tipo === "codigo");
+  const fonteCodigo = temCodigo
+    ? `\n    @font-face { font-family: "JetBrains Mono"; src: url("fontes/jetbrains-mono-latin-400-normal.woff2") format("woff2"); font-weight: 400; }\n    @font-face { font-family: "JetBrains Mono"; src: url("fontes/jetbrains-mono-latin-700-normal.woff2") format("woff2"); font-weight: 700; }`
+    : "";
+  const cssCodigo = temCodigo
+    ? `
+    .cena-codigo { padding: ${86 * escala}px 0 ${30 * escala}px; box-sizing: border-box; }
+    .cena-codigo .conteudo { width: 84%; gap: ${16 * escala}px; }
+    .titulo.menor { font-size: ${60 * escala}px; }
+    .cena-codigo .texto { font-size: ${34 * escala}px; max-width: 46em; }
+    .arquivo { align-self: flex-start; font-family: "JetBrains Mono", monospace; font-size: ${24 * escala}px; color: ${m.verde}; background: ${m.verdeClaro}; padding: 8px 16px; border-radius: 10px; }
+    .arquivo span { color: ${m.cinza}; }
+    .codigo { margin: 6px 0 0; background: #10231f; color: #e6efe9; border-radius: 22px; padding: ${28 * escala}px ${34 * escala}px; font-family: "JetBrains Mono", monospace; font-size: ${23 * escala}px; line-height: 1.5; overflow: hidden; font-variant-ligatures: none; font-feature-settings: "liga" 0, "calt" 0; box-shadow: 0 30px 60px -40px #0b1f1a; }
+    .codigo .l { display: grid; grid-template-columns: auto 1fr; column-gap: 26px; }
+    .codigo .ln { color: #5f7a72; white-space: pre; text-align: right; }
+    .codigo .tx { white-space: pre-wrap; overflow-wrap: anywhere; padding-left: calc(var(--recuo) + 2ch); text-indent: -2ch; }
+    .c-kw { color: #8fd6b0; font-weight: 700; }
+    .c-str { color: #f2c48d; }
+    .c-num { color: #b9a6ff; }
+    .c-com { color: #7f978f; font-style: italic; }`
+    : "";
   const html = `<!doctype html>
 <!-- GERADO por video/gerador/gerar.mjs a partir de video/roteiros/${id}.json. Não edite aqui: edite o roteiro e gere de novo. -->
 <html lang="pt-BR">
@@ -207,7 +282,7 @@ export function composicao(roteiro) {
   <title>${escapar(roteiro.titulo)}</title>
   <style>
     @font-face { font-family: "DM Sans"; src: url("fontes/dm-sans-latin-400-normal.woff2") format("woff2"); font-weight: 400; }
-    @font-face { font-family: "DM Sans"; src: url("fontes/dm-sans-latin-700-normal.woff2") format("woff2"); font-weight: 700; }
+    @font-face { font-family: "DM Sans"; src: url("fontes/dm-sans-latin-700-normal.woff2") format("woff2"); font-weight: 700; }${fonteCodigo}
     html, body { margin: 0; width: 100%; height: 100%; background: ${m.fundo}; }
     #${id} { position: relative; width: 100%; height: 100%; overflow: hidden; background: ${m.fundo}; color: ${m.tinta}; font-family: "DM Sans", sans-serif; }
     .cena { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
@@ -233,7 +308,7 @@ ${chips}
     .aneis span + span { inset: 18%; background: ${m.verdeClaro}; opacity: 0.55; border: 0; }
     .rodape { position: absolute; left: 0; right: 0; bottom: 0; height: 10px; background: ${m.verdeClaro}; }
     .barra-progresso { width: 100%; height: 100%; background: ${m.verde}; transform-origin: 0 50%; }
-    .marca { position: absolute; top: ${vertical ? 64 : 48}px; left: ${vertical ? 9 : 6}%; font-size: 30px; font-weight: 700; color: ${m.verde}; }
+    .marca { position: absolute; top: ${vertical ? 64 : 48}px; left: ${vertical ? 9 : 6}%; font-size: 30px; font-weight: 700; color: ${m.verde}; }${cssCodigo}
   </style>
 </head>
 <body>
