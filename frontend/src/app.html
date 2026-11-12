@@ -21,7 +21,9 @@
       <span>◫</span> Feed da comunidade</button
     ><button [class.active]="view==='saved'" (click)="select('saved')">
       <span>◇</span> Itens salvos</button
-    >@if(user()?.isAdmin){<button
+    >@if(user()){<button [class.active]="view==='radar'" (click)="select('radar')">
+      <span>◎</span> Meu radar automático</button>
+    }@if(user()?.isAdmin){<button
       [class.active]="view==='moderation'"
       (click)="select('moderation')"
     >
@@ -57,6 +59,9 @@
       <button (click)="notice.set('')" aria-label="Fechar aviso">×</button>
     </div>
     }
+    @if(view==='radar') {
+      @if(user(); as u) { <app-collection-radar [memberId]="u.id" /> }
+    } @else {
     <div class="section-heading">
       <div>
         <h2>
@@ -173,6 +178,7 @@
       </button>
     </nav>
     }}
+    }
     <footer>
       Fontes externas expressam a visão de seus autores. Consulte o conteúdo
       original e compare perspectivas.<br /><span

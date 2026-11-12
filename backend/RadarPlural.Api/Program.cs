@@ -12,12 +12,16 @@ using RadarPlural.Api;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.WebHost.UseUrls("http://localhost:5080");
+builder.WebHost.UseUrls(builder.Configuration["Urls"] ?? "http://localhost:5080");
 builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestBodySize = 32768);
 
 builder.Services.AddDbContext<AppDb>(o => o.UseNpgsql(builder.Configuration.GetConnectionString("Default") ?? throw new InvalidOperationException("Configure ConnectionStrings__Default para PostgreSQL.")));
 
 builder.Services.AddSingleton<IPasswordHasher<Member>, PasswordHasher<Member>>();
+builder.Services.Configure<CollectionOptions>(builder.Configuration.GetSection("Collection"));
+builder.Services.AddHttpClient<IFeedFetcher, FeedFetcher>(client => client.Timeout = Timeout.InfiniteTimeSpan)
+    .ConfigurePrimaryHttpMessageHandler(FeedFetcher.Handler);
+builder.Services.AddHostedService<CollectionWorker>();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(o =>
 {
@@ -78,6 +82,7 @@ if (app.Environment.IsDevelopment())
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDb>();
     await db.Database.EnsureCreatedAsync();
+    await db.Database.ExecuteSqlRawAsync(CollectionData.Schema);
     var adminEmail = builder.Configuration["BootstrapAdminEmail"];
     if (!string.IsNullOrWhiteSpace(adminEmail))
     {
@@ -209,6 +214,7 @@ app.MapPut("/api/moderation/posts/{id:guid}/hide", async (Guid id, AppDb db) =>
     return Results.NoContent();
 }).RequireAuthorization(p => p.RequireRole("admin"));
 
+app.MapCollections();
 app.Run();
 
 static Guid Id(HttpContext ctx) => Guid.Parse(ctx.User.FindFirstValue(ClaimTypes.NameIdentifier)!);

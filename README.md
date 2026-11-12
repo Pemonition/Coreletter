@@ -8,6 +8,10 @@ Base inicial publicada: ASP.NET Core .NET 10, PostgreSQL e Angular. O primeiro i
 
 Comparação premium com IA, scraping controlado e integração financeira persistente são próximas entregas. Compartilhar uma URL não baixa seu conteúdo. Não há transcrição de áudio, cobrança real, postagem em redes sociais ou IA real conectada nesta base.
 
+## Incremento local: radar automático
+
+Esta cópia de trabalho inclui questionário e coleta periódica privada de RSS/Atom. O catálogo é controlado pelo responsável e a coleta vem desativada por padrão. Veja [política, configuração e limites](docs/decisoes/0001-coleta-por-questionario.md). A coleta é determinística e não depende de IA; exporta evidências JSON para análise manual. Esta alteração ainda não foi publicada no GitHub.
+
 ## Executar no PowerShell
 
 Pré-requisitos: PowerShell 7 (`pwsh`), SDK .NET 10, Node compatível com a versão Angular fixada no frontend/package.json, npm e Docker Desktop em execução. Instale dependências com `dotnet restore backend/RadarPlural.slnx` e `npm ci --prefix frontend`.

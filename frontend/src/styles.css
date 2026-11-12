@@ -4,6 +4,24 @@
   background: #f5f7f6;
   font-synthesis: none;
 }
+.radar-form {
+  padding: 24px;
+  border: 1px solid #e1e8e3;
+  border-radius: 14px;
+  background: white;
+}
+.radar-form fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.radar-form legend { font-weight: 700; font-size: 14px; padding: 0; }
+.radar-form small, .radar-help { color: #64776c; font-size: 12px; line-height: 1.7; }
+.radar-optional { font-weight: 400; }
+.radar-form .radar-sources { border-top: 1px solid #e1e8e3; padding-top: 18px; margin-top: 24px; }
+.radar-sources p { font-size: 13px; }
+.radar-check { display: flex; align-items: center; gap: 10px; }
+.radar-check input { width: 18px; height: 18px; margin: 0; }
+.radar-check small { margin-left: 6px; }
+.radar-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.radar-status { margin-top: 18px; padding: 18px 22px; background: #e8f0e6; border-radius: 12px; font-size: 13px; }
+.radar-status p { margin: 8px 0 0; }
 * {
   box-sizing: border-box;
 }

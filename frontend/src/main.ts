@@ -2,6 +2,7 @@ import { Component, signal } from "@angular/core";
 import { bootstrapApplication } from "@angular/platform-browser";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
+import { CollectionRadar } from "./collection-radar";
 
 interface User {
   id: string;
@@ -30,7 +31,7 @@ interface Report {
 @Component({
   selector: "app-root",
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, CollectionRadar],
   templateUrl: "./app.html",
 })
 class App {
@@ -97,6 +98,7 @@ class App {
     await this.load();
   }
   async load() {
+    if (this.view === "radar") return;
     this.loading.set(true);
     this.error.set("");
     try {
@@ -155,6 +157,8 @@ class App {
     }
   }
   async logout() {
+    // Destroy the private radar immediately, aborting its requests and polling.
+    this.view = "feed";
     try {
       await this.api("/auth/logout", { method: "POST" });
       this.user.set(null);

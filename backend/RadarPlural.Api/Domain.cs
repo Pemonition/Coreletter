@@ -9,9 +9,12 @@ public sealed class AppDb(DbContextOptions<AppDb> options) : DbContext(options)
     public DbSet<Post> Posts => Set<Post>();
     public DbSet<SavedPost> Saved => Set<SavedPost>();
     public DbSet<Report> Reports => Set<Report>();
+    public DbSet<CollectionProfile> CollectionProfiles => Set<CollectionProfile>();
+    public DbSet<CollectedItem> CollectedItems => Set<CollectedItem>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
+        CollectionData.Configure(b);
         b.Entity<Member>().HasIndex(x => x.Email).IsUnique();
         b.Entity<SavedPost>().HasKey(x => new { x.MemberId, x.PostId });
         b.Entity<SavedPost>().HasOne<Post>().WithMany().HasForeignKey(x => x.PostId).OnDelete(DeleteBehavior.Cascade);

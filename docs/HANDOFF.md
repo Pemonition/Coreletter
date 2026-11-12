@@ -1,5 +1,17 @@
 # Estado da base automatizada
 
+## Incremento local — 27/10/2026: questionário e coleta
+
+Prevalece sobre os trechos históricos abaixo quanto à coleta: implementados questionário autenticado, preferências PostgreSQL, worker periódico, fontes RSS/Atom controladas, filtros, resultados privados, pausa, deduplicação e exportação JSON para análise manual. Sem integração real de IA, envios de newsletter, cobrança ou coleta real habilitada. Catálogo inicial vazio e `Collection:Enabled=false`.
+
+Política e ativação: `docs/decisoes/0001-coleta-por-questionario.md`. Contrato em `backend/API.md`. Não há fetch de URLs arbitrárias do cliente. Histórico preservado. Novo esquema aditivo aplicado apenas ao PostgreSQL descartável nesta validação; nenhum banco do curso foi alterado.
+
+Validação executada: 58 testes backend aprovados, incluindo três com PostgreSQL 17 real descartável; 6 testes frontend aprovados e builds Angular desenvolvimento/produção aprovados. `scripts/Test-Collections.ps1` aprovado por HTTP na API local com contas fictícias: 401, conta nova, salvar/alterar questionário pausado, isolamento, bloqueio de URL fora do catálogo, coleta global desligada, export e logout. Dois especialistas auxiliaram implementação frontend e revisão estática. CI foi atualizada para executar estes testes, mas ainda não foi disparada remotamente.
+
+Limites: testes de rede usaram respostas HTTP controladas; não houve coleta de uma fonte pública nem inspeção visual no navegador. A transação do worker mantém lock durante até três downloads limitados e não é uma fila de grande escala. Para demonstrar coleta real, o responsável precisa configurar e habilitar uma fonte permitida, iniciar API/banco, preencher o questionário e ativar o radar. Material acadêmico ainda requer entendimento e revisão da equipe antes do merge.
+
+Esta implementação foi preparada inicialmente em cópia de trabalho isolada do Life Project, preservando o original durante testes. Não publicada no GitHub. Prospeção comercial fica para depois do projeto do curso, conforme Hugo.
+
 Data: 26/10/2026. Produto Coreletter; namespaces .NET e nome técnico npm ainda RadarPlural para preservar os contratos iniciais. Isso não representa uma segunda aplicação.
 
 ## Implementado
