@@ -39,7 +39,7 @@ Historia: agrupada → auditada → roteirizada → video_pronto → publicada
 
 **Por quê:** se a IA ou a plataforma de vídeo cair no meio, nada se perde: o item fica parado e é retomado na próxima execução. Também fica fácil ver no banco onde cada notícia está, e cada etapa pode virar um pod separado no Kubernetes depois.
 
-## Portas e adaptadores (aula de 11/11)
+## Portas e adaptadores (aula de 11/11, notas em `docs/AULAS.md`)
 Cada etapa é uma **interface** (porta). A implementação concreta é um **adaptador** que pode ser trocado sem mexer no resto:
 
 | Porta | Adaptador simulado (demo, testes) | Adaptador real |
@@ -100,7 +100,7 @@ Resumo por cliente conforme plano e temas (#13): site sempre; e-mail, WhatsApp e
 ---
 
 ## Kubernetes: onde entra
-O professor sugeriu começar por um cluster simples (API "hello world", dois pods conversando). Conceitos da aula de 09/11 aplicados aqui:
+O professor sugeriu começar por um cluster simples (API "hello world", dois pods conversando). Notas completas das aulas e a avaliação "o Coreletter comporta Kubernetes?" em `docs/AULAS.md`. Conceitos da aula de 09/11 aplicados aqui:
 
 | Conceito | No Coreletter |
 |---|---|

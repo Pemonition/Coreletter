@@ -56,8 +56,15 @@ Primeiro o "hello world" de cluster à parte (kind/minikube, API simples, dois p
 
 Começar pelo cluster agora atrasaria o produto (prazo de 3 semanas); a separação por etapas já deixa o código pronto para isso.
 
+Avaliação pelos critérios do professor ("quando vale a pena", aula 2 de 09/11), proposta de deploy alternativo local em `deploy/k8s/` com teste de carga e **regra de teto de custo** (`réplicas máximas × custo por pod-hora`): ver `docs/AULAS.md`.
+
 ### 7. HyperFrames também para documentação e apresentação
-O mesmo pipeline de vídeo serve para: vídeo explicando a arquitetura para a equipe (e publicado como artigo da própria plataforma), tutoriais curtos para o usuário e vídeo de abertura da apresentação do TCC. Ver issue de discussão.
+A documentação é parte do produto: cada parte e cada escolha precisam estar explicadas para a equipe (este arquivo, `docs/PIPELINE.md`, `docs/AULAS.md`). O mesmo modelo de vídeo serve para:
+1. **Vídeo para a equipe** explicando o pipeline, publicado também como **artigo da própria plataforma** ("como o Coreletter funciona"), o que já é transparência para o usuário.
+2. **Tutoriais curtos** para o usuário (escolher temas, ler uma comparação, entender as limitações).
+3. **Abertura da apresentação do TCC** (B10, `docs/APRESENTACAO.md`), pré-renderizada para funcionar sem internet.
+
+Esses vídeos são escritos a mão (não vêm de notícias) e servem de **prova de conceito** do adaptador antes de ligá-lo ao pipeline.
 
 ## Alternativas consideradas
 | Opção | Por que não agora |
