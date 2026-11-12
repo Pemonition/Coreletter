@@ -13,5 +13,7 @@ Base `/api`; autenticação cookie HttpOnly (proxy Angular para http://localhost
 - POST /posts/{id}/reports {reason} ->204
 - GET /moderation/reports -> [{id,postId,reason,createdAt}] administrador
 - PUT /moderation/posts/{id}/hide ->204 administrador
+- GET /news?page=1&pageSize=20&topic=&source= -> {items:[NewsItem],page,pageSize,total}; público; pageSize máx. 50; ordem por publicação (ou coleta) decrescente. topic exato (ex.: tecnologia, geral); source = id da fonte em fontes.json.
 Post: {id,url,title,topic,type,comment,authorId,authorName,createdAt,isSaved}.
-Sem comparação IA nesta entrega. Sem download remoto de links.
+NewsItem: {id,sourceId,sourceName,topic,url,title,summary,publishedAt|null,collectedAt}. Texto puro, já higienizado; summary até 300 caracteres. Coletado pelo RadarPlural.Worker (docs/decisoes/0002-ingestao.md).
+Sem comparação IA nesta entrega. A API não baixa links enviados por usuários; só o Worker acessa a rede, e apenas fontes da lista aprovada.

@@ -157,6 +157,22 @@ app.MapGet("/api/posts", async (HttpContext ctx, AppDb db, int page = 1, int pag
     return Results.Ok(new { items = posts.Select(p => PostDto(p, saved.Contains(p.Id))), page, pageSize, total });
 });
 
+// Notícias coletadas automaticamente das fontes aprovadas (RadarPlural.Worker). Leitura pública.
+app.MapGet("/api/news", async (AppDb db, int page = 1, int pageSize = 20, string? topic = null, string? source = null) =>
+{
+    if (page < 1 || page > 1000000) return Error("Página deve estar entre 1 e 1000000.");
+    pageSize = Math.Clamp(pageSize, 1, 50);
+    var q = db.FeedItems.AsNoTracking();
+    if (!string.IsNullOrWhiteSpace(topic)) q = q.Where(x => x.Topic == topic.Trim().ToLower());
+    if (!string.IsNullOrWhiteSpace(source)) q = q.Where(x => x.SourceId == source.Trim());
+    var total = await q.CountAsync();
+    var items = await q.OrderByDescending(x => x.PublishedAt ?? x.CollectedAt).ThenByDescending(x => x.Id)
+        .Skip((page - 1) * pageSize).Take(pageSize)
+        .Select(x => new { x.Id, x.SourceId, x.SourceName, x.Topic, x.Url, x.Title, x.Summary, x.PublishedAt, x.CollectedAt })
+        .ToListAsync();
+    return Results.Ok(new { items, page, pageSize, total });
+}).RequireRateLimiting("api");
+
 app.MapGet("/api/posts/saved", async (HttpContext ctx, AppDb db) =>
 {
     var memberId = Id(ctx);
