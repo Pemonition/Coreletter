@@ -85,7 +85,7 @@ jobs:
       - name: Validar manifests do Kubernetes (esquema oficial)
         run: >-
           docker run --rm -v "$PWD/deploy/k8s:/k8s:ro" ghcr.io/yannh/kubeconform:v0.6.7
-          -strict -summary -kubernetes-version 1.31.0 -ignore-filename-pattern kustomization.yaml /k8s
+          -strict -summary -kubernetes-version 1.31.0 -ignore-filename-pattern "(kustomization\.yaml|custo\.json)$" /k8s
       - run: docker build -t coreletter .
       - run: docker build -f Dockerfile.worker -t coreletter-worker .
       - name: Migração como passo único (o que o Job do Kubernetes faz)
