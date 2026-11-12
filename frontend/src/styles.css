@@ -751,6 +751,25 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .hero.hero-compact > div:first-child { max-width:100%; }
 .hero.hero-compact h1 { font-size:clamp(22px,2.1vw,30px); letter-spacing:-.5px; margin:8px 0 0; }
 .hero.hero-compact .hero-line { display:inline; }
+/* Contraste (antes entre 2,2:1 e 4,3:1) e tamanho mínimo de 11 px para texto lido. */
+.preview { color:#677873; font-size:11px; }
+.side-label { color:#66716d; font-size:11px; }
+.side-note p, .topic, .section-heading p, .source, footer { color:#66716b; }
+.topic, footer { font-size:11px; }
+.filters label span { color:#66716b; font-size:11px; }
+.badge { color:#39745c; font-size:11px; }
+.badge.podcast { color:#7c5b94; }
+.badge.music { color:#856836; }
+.post-title span { color:#597b6a; }
+.avatar { color:#5f6a55; }
+.author time { color:#6c776f; font-size:11px; }
+.card-actions button { color:#69776d; font-size:11px; }
+footer span { color:#69706c; }
+.radar-form small, .radar-help { color:#617368; }
+.empty { color:#69796f; }
+/* Celular: selo, tema e data quebram linha em vez de alargar o card (tema longo estourava 7 px em 360 px). */
+.card-meta { flex-wrap:wrap; row-gap:6px; min-width:0; }
+.card-meta .topic { overflow-wrap:anywhere; min-width:0; }
 @media(max-width:600px) {
   .hero.hero-compact { padding:18px 20px; }
   .hero.hero-compact h1, .hero.hero-compact .eyebrow { padding-right:0; }
