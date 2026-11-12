@@ -1,0 +1,25 @@
+# Imagem do Worker (coletor + etapas do pipeline). Usada pelo CronJob e pelos Deployments em deploy/k8s.
+#   docker build -f Dockerfile.worker -t coreletter-worker:local .
+#   docker run --rm -e ConnectionStrings__Default=... coreletter-worker:local            (coleta)
+#   docker run --rm -e ConnectionStrings__Default=... coreletter-worker:local --etapa auditoria --continuo
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+# Só os .csproj primeiro: o restore fica em cache enquanto as dependências não mudam.
+COPY backend/RadarPlural.Ingestion/RadarPlural.Ingestion.csproj backend/RadarPlural.Ingestion/
+COPY backend/RadarPlural.Pipeline/RadarPlural.Pipeline.csproj backend/RadarPlural.Pipeline/
+COPY backend/RadarPlural.Infrastructure/RadarPlural.Infrastructure.csproj backend/RadarPlural.Infrastructure/
+COPY backend/RadarPlural.Worker/RadarPlural.Worker.csproj backend/RadarPlural.Worker/
+RUN dotnet restore backend/RadarPlural.Worker/RadarPlural.Worker.csproj
+COPY backend/RadarPlural.Ingestion/ backend/RadarPlural.Ingestion/
+COPY backend/RadarPlural.Pipeline/ backend/RadarPlural.Pipeline/
+COPY backend/RadarPlural.Infrastructure/ backend/RadarPlural.Infrastructure/
+COPY backend/RadarPlural.Worker/ backend/RadarPlural.Worker/
+# Arquivo compartilhado com a API (conversão de URL postgresql://), incluído no Worker como link.
+COPY backend/RadarPlural.Api/DatabaseUrl.cs backend/RadarPlural.Api/
+RUN dotnet publish backend/RadarPlural.Worker/RadarPlural.Worker.csproj -c Release -o /app --no-restore
+
+FROM mcr.microsoft.com/dotnet/runtime:10.0
+WORKDIR /app
+COPY --from=build /app .
+USER $APP_UID
+ENTRYPOINT ["dotnet", "RadarPlural.Worker.dll"]

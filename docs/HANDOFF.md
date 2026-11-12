@@ -50,6 +50,14 @@ TDD: RED 33 falhas esperadas → GREEN 134. Segunda rodada com dados reais revel
 
 Validado com PostgreSQL 16 e feeds reais: ~200 notícias por coleta, ~50 descartadas (42 por caminho de afiliado), ~130 histórias, 12 com 2+ fontes. Reexecução mantém ids; divisão de história errada manteve o id na parte maior; zero histórias órfãs; contagens conferidas por SQL. Limitações: regra por palavras não entende sinônimos ("renuncia" × "deixa") e depende de nome próprio; mesma história com manchetes muito diferentes pode ficar separada (ex.: "Epic Games" × "Jogos grátis na Epic Games"); manchetes TODAS EM MAIÚSCULAS contam todas as palavras como nome.
 
+## Escala desde o MVP (12/11/2026, branch feat/escala-pipeline, sobre feat/triagem-agrupamento)
+
+Decisão `docs/decisoes/0004-escala-desde-o-mvp.md`. Projetos novos: `RadarPlural.Pipeline` (casos de uso e portas: `StageRunner`, `RetryPolicy`, `IStoryQueue`, `IAuditor`…) e `RadarPlural.Infrastructure` (adaptadores PostgreSQL: `PgStoryQueue`, e `FeedItemStore`/`StoryStore` movidos do Worker). Worker `--etapa`; API `/api/health/ready`, `--migrate-only`, `Database__MigrateOnStartup`, `RateLimit__PermitPerMinute`; `deploy/k8s`; `Dockerfile.worker`; `scripts/carga`.
+
+TDD: executor RED 26 → GREEN (o teste "notícia nova devolve a história ao início" passou de primeira porque o SQL foi escrito antes do teste: registrado como tal). Teto de custo RED 13 → GREEN. Testes de arquitetura escritos depois (trava). Total **186 testes**, 7 de integração com PostgreSQL (ignorados sem `INTEGRATION_DATABASE_URL`; a CI define). Mutações conferidas: sem `SKIP LOCKED` o teste de concorrência falha 3/3; `maxReplicas: 9` estoura o teto; `Pipeline` dependendo de Npgsql quebra o teste de arquitetura.
+
+Bug encontrado e corrigido: duas instâncias da API migrando juntas → uma cai. Linha de base de carga em 1 núcleo: ~480 req/s, p95 149 ms com 50 usuários, 0 erros.
+
 ## Próxima sessão
 
 1. Aceitar convites, conferir CI e executar B01 com PostgreSQL na máquina dos integrantes.

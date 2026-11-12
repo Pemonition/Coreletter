@@ -1,7 +1,8 @@
 using Npgsql;
 using RadarPlural.Ingestion;
+using RadarPlural.Pipeline;
 
-namespace RadarPlural.Worker;
+namespace RadarPlural.Infrastructure;
 
 // Grava no esquema criado pelas migrações da API (tabelas "FeedItems" e "Stories"); o Worker não altera o esquema.
 // ON CONFLICT ("Url") DO NOTHING: rodar o coletor de novo nunca duplica notícia.
@@ -122,6 +123,11 @@ public sealed class StoryStore(NpgsqlDataSource db)
             // Recalcula estatísticas e título (manchete mais antiga = quem deu primeiro) das histórias afetadas.
             var stats = new NpgsqlBatchCommand("""
                 UPDATE "Stories" s SET
+                    -- Notícias mudaram: nova versão e a história volta ao início do pipeline (auditoria antiga fica obsoleta).
+                    "Version" = s."Version" + CASE WHEN s."ItemCount" <> agg.items THEN 1 ELSE 0 END,
+                    "Status" = CASE WHEN s."ItemCount" <> agg.items THEN 'agrupada' ELSE s."Status" END,
+                    "Attempts" = CASE WHEN s."ItemCount" <> agg.items THEN 0 ELSE s."Attempts" END,
+                    "LastError" = CASE WHEN s."ItemCount" <> agg.items THEN NULL ELSE s."LastError" END,
                     "ItemCount" = agg.items, "SourceCount" = agg.sources,
                     "FirstPublishedAt" = agg.first, "LastPublishedAt" = agg.last,
                     "Title" = agg.title, "Topic" = agg.topic, "UpdatedAt" = $2
