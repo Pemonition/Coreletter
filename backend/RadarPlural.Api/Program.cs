@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Authentication;
 
 using Microsoft.AspNetCore.Authentication.Cookies;
 
+using Microsoft.AspNetCore.DataProtection;
+
 using Microsoft.AspNetCore.Identity;
 
 using Microsoft.EntityFrameworkCore;
@@ -12,10 +14,15 @@ using RadarPlural.Api;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.WebHost.UseUrls("http://localhost:5080");
+// Plataformas de hospedagem informam a porta em PORT; localmente a API continua em localhost:5080.
+var port = Environment.GetEnvironmentVariable("PORT");
+builder.WebHost.UseUrls(string.IsNullOrWhiteSpace(port) ? "http://localhost:5080" : $"http://0.0.0.0:{port}");
 builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestBodySize = 32768);
 
-builder.Services.AddDbContext<AppDb>(o => o.UseNpgsql(builder.Configuration.GetConnectionString("Default") ?? throw new InvalidOperationException("Configure ConnectionStrings__Default para PostgreSQL.")));
+builder.Services.AddDbContext<AppDb>(o => o.UseNpgsql(DatabaseUrl.ToNpgsql(builder.Configuration.GetConnectionString("Default") ?? throw new InvalidOperationException("Configure ConnectionStrings__Default para PostgreSQL."))));
+
+// Chaves que protegem o cookie ficam no banco: reinício ou novo deploy do container não derruba as sessões.
+builder.Services.AddDataProtection().PersistKeysToDbContext<AppDb>().SetApplicationName("coreletter");
 
 builder.Services.AddSingleton<IPasswordHasher<Member>, PasswordHasher<Member>>();
 
@@ -69,15 +76,19 @@ app.Use(async (context, next) =>
     await next();
 });
 
+// Em produção o build Angular é copiado para wwwroot: front e API na mesma origem, sem CORS.
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
-if (app.Environment.IsDevelopment())
+// Migrações versionadas em todos os ambientes; o administrador é promovido só se a conta já existir.
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDb>();
-    await db.Database.EnsureCreatedAsync();
+    await db.Database.MigrateAsync();
     var adminEmail = builder.Configuration["BootstrapAdminEmail"];
     if (!string.IsNullOrWhiteSpace(adminEmail))
     {
@@ -145,6 +156,22 @@ app.MapGet("/api/posts", async (HttpContext ctx, AppDb db, int page = 1, int pag
     var saved = await db.Saved.Where(x => x.MemberId == memberId && postIds.Contains(x.PostId)).Select(x => x.PostId).ToListAsync();
     return Results.Ok(new { items = posts.Select(p => PostDto(p, saved.Contains(p.Id))), page, pageSize, total });
 });
+
+// Notícias coletadas automaticamente das fontes aprovadas (RadarPlural.Worker). Leitura pública.
+app.MapGet("/api/news", async (AppDb db, int page = 1, int pageSize = 20, string? topic = null, string? source = null) =>
+{
+    if (page < 1 || page > 1000000) return Error("Página deve estar entre 1 e 1000000.");
+    pageSize = Math.Clamp(pageSize, 1, 50);
+    var q = db.FeedItems.AsNoTracking();
+    if (!string.IsNullOrWhiteSpace(topic)) q = q.Where(x => x.Topic == topic.Trim().ToLower());
+    if (!string.IsNullOrWhiteSpace(source)) q = q.Where(x => x.SourceId == source.Trim());
+    var total = await q.CountAsync();
+    var items = await q.OrderByDescending(x => x.PublishedAt ?? x.CollectedAt).ThenByDescending(x => x.Id)
+        .Skip((page - 1) * pageSize).Take(pageSize)
+        .Select(x => new { x.Id, x.SourceId, x.SourceName, x.Topic, x.Url, x.Title, x.Summary, x.PublishedAt, x.CollectedAt })
+        .ToListAsync();
+    return Results.Ok(new { items, page, pageSize, total });
+}).RequireRateLimiting("api");
 
 app.MapGet("/api/posts/saved", async (HttpContext ctx, AppDb db) =>
 {
