@@ -16,14 +16,14 @@
 <div class="layout">
   <aside class="sidebar">
     <div class="side-label">SEU ESPAÇO</div>
-    <button [class.active]="view==='feed'" (click)="select('feed')">
+    <button [class.active]="view==='feed'" [attr.aria-current]="view==='feed' ? 'page' : null" (click)="select('feed')">
       <span>◫</span> Feed da comunidade</button
-    ><button [class.active]="view==='saved'" (click)="select('saved')">
+    ><button [class.active]="view==='saved'" [attr.aria-current]="view==='saved' ? 'page' : null" (click)="select('saved')">
       <span>◇</span> Itens salvos</button
-    >@if(user()){<button [class.active]="view==='radar'" (click)="select('radar')">
+    >@if(user()){<button [class.active]="view==='radar'" [attr.aria-current]="view==='radar' ? 'page' : null" (click)="select('radar')">
       <span>◎</span> Meu radar automático</button>
     }@if(user()?.isAdmin){<button
-      [class.active]="view==='moderation'"
+      [class.active]="view==='moderation'" [attr.aria-current]="view==='moderation' ? 'page' : null"
       (click)="select('moderation')"
     >
       <span>⚑</span> Moderação</button
