@@ -1,0 +1,27 @@
+# Blueprint do Render (plano gratuito, sem faturamento). New > Blueprint > este repositório.
+databases:
+  - name: coreletter-db
+    plan: free
+    databaseName: coreletter
+    user: coreletter
+
+services:
+  - type: web
+    name: coreletter
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      # URL postgresql:// gerada pelo Render; DatabaseUrl.ToNpgsql converte para o Npgsql.
+      - key: ConnectionStrings__Default
+        fromDatabase:
+          name: coreletter-db
+          property: connectionString
+      # Usa X-Forwarded-For/Proto do proxy do Render (IP real no rate limit, esquema https).
+      - key: ASPNETCORE_FORWARDEDHEADERS_ENABLED
+        value: "true"
+      # E-mail de uma conta JÁ cadastrada que deve virar administradora; preenchido no painel.
+      - key: BootstrapAdminEmail
+        sync: false

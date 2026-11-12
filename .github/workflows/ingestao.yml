@@ -1,0 +1,33 @@
+name: Coletar notícias
+# Roda o RadarPlural.Worker: lê as fontes aprovadas (fontes.json), grava em "FeedItems" e termina.
+# Agendamento do GitHub só dispara a partir da branch padrão (main). Para testar antes: Actions → Run workflow.
+on:
+  schedule:
+    - cron: '17 */3 * * *' # a cada 3 horas, minuto 17 (evita o pico da hora cheia)
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ingestao
+  cancel-in-progress: false
+jobs:
+  coletar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Coletar
+        env:
+          # Settings → Secrets and variables → Actions → INGESTAO_DATABASE_URL
+          # (External Database URL do Render terminada em ?sslmode=require). Nunca colocar no código.
+          ConnectionStrings__Default: ${{ secrets.INGESTAO_DATABASE_URL }}
+        run: |
+          if [ -z "$ConnectionStrings__Default" ]; then
+            echo "::warning::Secret INGESTAO_DATABASE_URL não configurado; executando só --dry-run (nada é gravado)."
+            dotnet run -c Release --project backend/RadarPlural.Worker -- --dry-run
+          else
+            dotnet run -c Release --project backend/RadarPlural.Worker
+          fi

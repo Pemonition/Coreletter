@@ -37,7 +37,11 @@ Em um terceiro PowerShell na raiz:
 .\scripts\Start-Web.ps1
 ```
 
-Abra http://localhost:4200. API em http://localhost:5080/api/health. Banco em localhost:5433, acessível somente na interface local. Cadastre uma conta fictícia para demonstrar. O esquema inicial usa EnsureCreated em Development; migrações versionadas são uma tarefa futura antes de evoluir o banco com dados mantidos. Não use esta configuração como deploy de produção.
+Abra http://localhost:4200. API em http://localhost:5080/api/health. Banco em localhost:5433, acessível somente na interface local. Cadastre uma conta fictícia para demonstrar. O esquema é criado por migrações versionadas do EF Core (`backend/RadarPlural.Api/Migrations`), aplicadas automaticamente quando a API inicia.
+
+Se o seu banco local foi criado antes das migrações (com `EnsureCreated`), a API vai falhar ao iniciar porque as tabelas já existem sem histórico. Como o banco local só tem dados fictícios, recrie-o uma vez com `docker compose down -v` e `.\scripts\Start-Database.ps1`.
+
+Para criar uma nova migração depois de alterar entidades: `dotnet tool restore` e `dotnet ef migrations add NomeDaMudanca --project backend/RadarPlural.Api` (com `ConnectionStrings__Default` definido). Revise o arquivo gerado na PR.
 
 Para validar a base:
 
@@ -52,6 +56,41 @@ Com a API e um banco descartável em execução, `pwsh -File scripts/Test-Api.ps
 ## Vídeos (HyperFrames)
 
 Roteiro em JSON → composição HTML/GSAP → MP4 com a marca do projeto. Primeiro vídeo: "Como o Coreletter funciona". Guia completo, com o passo a passo no Windows: [video/README.md](video/README.md).
+## Demonstração na nuvem (Render, plano gratuito)
+
+A pasta raiz tem `Dockerfile` e `render.yaml`. Uma única imagem compila o Angular e o entrega pela própria API, então front e API ficam na mesma origem. Assim o cookie `SameSite=Strict` e a checagem de `Origin` continuam valendo, sem CORS. O Blueprint cria o PostgreSQL gratuito e o serviço web e liga um ao outro sem nenhuma senha no Git.
+
+1. Entrar em https://render.com com a conta do GitHub do tech lead.
+2. **New → Blueprint** → repositório `Coreletter` → branch `main`.
+3. Deixar `BootstrapAdminEmail` vazio no primeiro deploy e clicar em **Apply**.
+4. Abrir a URL `https://<servico>.onrender.com`, cadastrar a conta de administração da demonstração, preencher `BootstrapAdminEmail` com esse e-mail em **Environment** e salvar (o serviço reinicia e promove a conta).
+
+Limites do plano gratuito, a considerar no ensaio da apresentação:
+- O serviço hiberna após cerca de 15 minutos sem acesso; o primeiro acesso depois disso leva perto de 1 minuto.
+- O PostgreSQL gratuito do Render **expira 30 dias após a criação**. Antes disso, migre para outro Postgres (por exemplo, Neon gratuito) trocando apenas a variável `ConnectionStrings__Default` no painel; URLs `postgresql://` são aceitas.
+- Use somente contas e conteúdos fictícios: a URL é pública.
+
+Decisão registrada em `docs/decisoes/0001-deploy-render.md`.
+
+## Coletor de notícias (RSS/Atom)
+
+O projeto `backend/RadarPlural.Worker` lê os feeds das fontes aprovadas em `backend/RadarPlural.Worker/fontes.json`, grava título, link, data e um trecho curto na tabela `FeedItems` e termina. A API mostra o resultado em `GET /api/news`. A política (fontes, SSRF, limites, direito autoral) está em `docs/decisoes/0002-ingestao.md`.
+
+```powershell
+# Ver o que seria coletado, sem banco:
+dotnet run --project backend/RadarPlural.Worker -- --dry-run
+# Gravar no banco local (a API precisa ter rodado uma vez para aplicar as migrações):
+$env:ConnectionStrings__Default = "Host=localhost;Port=5433;Database=radarplural;Username=radarplural;Password=<a do .env>"
+dotnet run --project backend/RadarPlural.Worker
+# Só uma fonte:
+dotnet run --project backend/RadarPlural.Worker -- --fonte tecnoblog
+```
+
+Rodar de novo não duplica notícias. Uma fonte fora do ar não interrompe as outras.
+
+Na nuvem, o GitHub Actions roda o coletor a cada 3 horas (`.github/workflows/ingestao.yml`). Para gravar no banco do Render, crie o secret **INGESTAO_DATABASE_URL** em *Settings → Secrets and variables → Actions*, com a *External Database URL* do PostgreSQL do Render terminada em `?sslmode=require`. Sem o secret, o workflow roda só `--dry-run`.
+
+Para incluir uma fonte: o site precisa publicar RSS/Atom em https e não bloquear robôs. Use a URL final, depois de redirecionamentos (com ou sem `www`), porque o coletor não segue redirecionamento para fora da lista. Teste com `--dry-run --fonte <id>` e abra PR.
 
 ## Colaboração
 
