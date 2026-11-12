@@ -17,7 +17,9 @@
 <div class="layout">
   <aside class="sidebar">
     <div class="side-label">SEU ESPAÇO</div>
-    <button [class.active]="view==='feed'" (click)="select('feed')">
+    <button [class.active]="view==='stories'" (click)="select('stories')">
+      <span>◎</span> Histórias e fontes</button
+    ><button [class.active]="view==='feed'" (click)="select('feed')">
       <span>◫</span> Feed da comunidade</button
     ><button [class.active]="view==='saved'" (click)="select('saved')">
       <span>◇</span> Itens salvos</button
@@ -60,16 +62,19 @@
     <div class="section-heading">
       <div>
         <h2>
-          {{view==='saved'?'Sua coleção':view==='moderation'?'Central de
+          {{view==='stories'?'A mesma notícia, vários veículos':view==='saved'?'Sua coleção':view==='moderation'?'Central de
           moderação':'No radar da comunidade'}}
         </h2>
         <p>
-          {{view==='saved'?'Descobertas que você quer
+          {{view==='stories'?'Histórias contadas por 2 ou mais fontes. Compare o que concordam, onde divergem e o que só uma diz.':view==='saved'?'Descobertas que você quer
           revisitar.':view==='moderation'?'Analise as denúncias antes de ocultar
           conteúdo.':'Mais recentes primeiro. Você escolhe o que explorar.'}}
         </p>
       </div>
-      @if(view!=='moderation'){<button class="primary" (click)="share()">
+      @if(view==='stories' && usage(); as u){<span class="quota" role="status"
+        >Plano {{u.planName}} · {{u.used}} de {{u.quota}} comparações no mês</span
+      >}
+      @if(view!=='moderation' && view!=='stories'){<button class="primary" (click)="share()">
         ＋ Compartilhar descoberta</button
       >}
     </div>
@@ -93,6 +98,60 @@
     </form>
     } @if(loading()){
     <div class="empty" role="status">Carregando descobertas…</div>
+    }@else if(view==='stories'){
+    <div class="stories">
+      @for(story of stories();track story.id){
+      <article class="story">
+        <div class="card-meta">
+          <span class="badge">{{story.sourceCount}} fontes</span
+          ><span class="topic">{{story.topic}}</span>
+          <time>{{story.lastPublishedAt | date:'dd/MM · HH:mm'}}</time>
+        </div>
+        <h3>{{story.title}}</h3>
+        <ul class="story-sources">
+          @for(item of story.items;track item.id){
+          <li>
+            <strong>{{item.sourceName}}</strong>
+            <a [href]="safeUrl(item.url)" target="_blank" rel="noopener noreferrer">{{item.title}} <span>↗</span></a>
+          </li>
+          }
+        </ul>
+        <button
+          class="secondary"
+          (click)="compare(story)"
+          [disabled]="comparing()===story.id"
+          [attr.aria-expanded]="!!comparisons()[story.id]"
+        >
+          {{comparing()===story.id?'Comparando…':comparisons()[story.id]?'Fechar comparação':'Comparar fontes'}}
+        </button>
+        @if(comparisons()[story.id]; as c){
+        <section class="comparison" aria-live="polite">
+          @if(c.simulated){<p class="simulated">Comparação simulada (regras, sem IA).</p>}
+          <div class="summary">
+            <span class="claim-chip concordante">{{c.summary.concordantes}} concordam</span>
+            <span class="claim-chip divergente">{{c.summary.divergentes}} divergem</span>
+            <span class="claim-chip unica_fonte">{{c.summary.unicaFonte}} só uma fonte</span>
+          </div>
+          @for(claim of c.claims;track claim.id){
+          <div class="claim" [class]="'claim ' + claim.status">
+            <span class="claim-chip" [class]="'claim-chip ' + claim.status">{{statusLabel(claim.status)}}</span>
+            <p>{{claim.text}}</p>
+            @for(e of claim.evidence;track $index){
+            <blockquote><span>{{sourceName(c, e.itemId)}}:</span> “{{e.quote}}”</blockquote>
+            }
+          </div>
+          }
+          <details>
+            <summary>Limitações desta comparação</summary>
+            <ul>@for(l of c.limitations;track $index){<li>{{l}}</li>}</ul>
+          </details>
+        </section>
+        }
+      </article>
+      }@empty{
+      <div class="empty">Ainda não há histórias contadas por 2 ou mais fontes. O coletor roda a cada 3 horas.</div>
+      }
+    </div>
     }@else if(view==='moderation'){@for(report of reports();track report.id){
     <article class="report">
       <span class="badge">Denúncia</span>
