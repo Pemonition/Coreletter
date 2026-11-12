@@ -139,6 +139,13 @@ namespace RadarPlural.Api.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("PlanId")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("free");
+
                     b.HasKey("Id");
 
                     b.HasIndex("Email")
@@ -296,6 +303,55 @@ namespace RadarPlural.Api.Migrations
                     b.ToTable("Stories");
                 });
 
+            modelBuilder.Entity("RadarPlural.Api.UsageMonth", b =>
+                {
+                    b.Property<Guid>("MemberId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Month")
+                        .HasMaxLength(7)
+                        .HasColumnType("character varying(7)");
+
+                    b.Property<int>("Used")
+                        .HasColumnType("integer");
+
+                    b.HasKey("MemberId", "Month");
+
+                    b.ToTable("UsageMonths", t =>
+                        {
+                            t.HasCheckConstraint("CK_UsageMonths_Used", "\"Used\" >= 0");
+                        });
+                });
+
+            modelBuilder.Entity("RadarPlural.Api.UsageReservation", b =>
+                {
+                    b.Property<Guid>("Key")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("MemberId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Month")
+                        .IsRequired()
+                        .HasMaxLength(7)
+                        .HasColumnType("character varying(7)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)");
+
+                    b.HasKey("Key");
+
+                    b.HasIndex("MemberId", "Month");
+
+                    b.ToTable("UsageReservations");
+                });
+
             modelBuilder.Entity("RadarPlural.Api.FeedItem", b =>
                 {
                     b.HasOne("RadarPlural.Api.Story", null)
@@ -318,6 +374,24 @@ namespace RadarPlural.Api.Migrations
                     b.HasOne("RadarPlural.Api.Post", null)
                         .WithMany()
                         .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("RadarPlural.Api.UsageMonth", b =>
+                {
+                    b.HasOne("RadarPlural.Api.Member", null)
+                        .WithMany()
+                        .HasForeignKey("MemberId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("RadarPlural.Api.UsageReservation", b =>
+                {
+                    b.HasOne("RadarPlural.Api.Member", null)
+                        .WithMany()
+                        .HasForeignKey("MemberId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

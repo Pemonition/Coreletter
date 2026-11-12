@@ -19,7 +19,19 @@ var port = Environment.GetEnvironmentVariable("PORT");
 builder.WebHost.UseUrls(string.IsNullOrWhiteSpace(port) ? "http://localhost:5080" : $"http://0.0.0.0:{port}");
 builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestBodySize = 32768);
 
-builder.Services.AddDbContext<AppDb>(o => o.UseNpgsql(DatabaseUrl.ToNpgsql(builder.Configuration.GetConnectionString("Default") ?? throw new InvalidOperationException("Configure ConnectionStrings__Default para PostgreSQL."))));
+var npgsqlConnection = DatabaseUrl.ToNpgsql(builder.Configuration.GetConnectionString("Default") ?? throw new InvalidOperationException("Configure ConnectionStrings__Default para PostgreSQL."));
+builder.Services.AddDbContext<AppDb>(o => o.UseNpgsql(npgsqlConnection));
+// Adaptadores da Infrastructure (arquitetura limpa: a API compõe, o domínio só conhece as portas).
+builder.Services.AddSingleton(_ => Npgsql.NpgsqlDataSource.Create(npgsqlConnection));
+builder.Services.AddSingleton<RadarPlural.Domain.Billing.IUsageLedger, RadarPlural.Infrastructure.PgUsageLedger>();
+
+// RN02 na inicialização: nenhum plano oferecido pode dar prejuízo no pior caso. Se der, a API não sobe.
+foreach (var plan in RadarPlural.Domain.Billing.PlanCatalog.All)
+{
+    var check = RadarPlural.Domain.Billing.Profitability.Check(plan, RadarPlural.Domain.Billing.PlanCatalog.Assumptions);
+    if (check != RadarPlural.Domain.Billing.PlanCheck.Ok)
+        throw new InvalidOperationException($"Plano '{plan.Id}' viola a regra de rentabilidade: {check}.");
+}
 
 // Chaves que protegem o cookie ficam no banco: reinício ou novo deploy do container não derruba as sessões.
 builder.Services.AddDataProtection().PersistKeysToDbContext<AppDb>().SetApplicationName("coreletter");
@@ -287,6 +299,46 @@ app.MapPost("/api/posts/{id:guid}/reports", async (Guid id, ReportInput input, H
     return Results.NoContent();
 }).RequireAuthorization().RequireRateLimiting("api");
 
+// Planos e números da regra de rentabilidade (RN01–RN04). Público: transparência para o usuário e demo na banca.
+app.MapGet("/api/plans", () =>
+{
+    var c = RadarPlural.Domain.Billing.PlanCatalog.Assumptions;
+    return Results.Ok(new
+    {
+        assumptions = new { c.CostPerComparison, c.DeliveryCostPerPaid, c.MinimumMargin, c.MaxFreeCostPerUser, c.FixedMonthlyCost, hypothetical = true },
+        plans = RadarPlural.Domain.Billing.PlanCatalog.All.Select(p => new
+        {
+            p.Id, p.Name, p.MonthlyPrice, p.MonthlyComparisons,
+            maxVariableCost = RadarPlural.Domain.Billing.Profitability.MaxVariableCost(p, c),
+            margin = RadarPlural.Domain.Billing.Profitability.Margin(p, c),
+            minimumPrice = p.MonthlyPrice > 0 ? RadarPlural.Domain.Billing.Profitability.MinimumPrice(p, c) : (decimal?)null,
+            breakEvenSubscribers = p.MonthlyPrice > 0 ? RadarPlural.Domain.Billing.Profitability.BreakEvenSubscribers(p, c) : (int?)null
+        })
+    });
+});
+
+// Uso do mês do usuário logado (RN01).
+app.MapGet("/api/me/usage", async (HttpContext ctx, AppDb db, RadarPlural.Domain.Billing.IUsageLedger ledger, CancellationToken ct) =>
+{
+    var memberId = Id(ctx);
+    var member = await db.Members.AsNoTracking().SingleOrDefaultAsync(x => x.Id == memberId, ct);
+    if (member is null) return Results.Unauthorized();
+    var plan = RadarPlural.Domain.Billing.PlanCatalog.Find(member.PlanId);
+    var now = DateTimeOffset.UtcNow;
+    return Results.Ok(new { planId = plan.Id, planName = plan.Name, month = RadarPlural.Domain.Billing.UsageRules.MonthKey(now), used = await ledger.UsedAsync(member.Id, now, ct), quota = plan.MonthlyComparisons });
+}).RequireAuthorization().RequireRateLimiting("api");
+
+// Sem pagamento real no TCC: o administrador troca o plano para demonstrar upgrade/downgrade.
+app.MapPut("/api/admin/members/{id:guid}/plan", async (Guid id, PlanInput input, AppDb db) =>
+{
+    if (RadarPlural.Domain.Billing.PlanCatalog.All.All(p => p.Id != input.PlanId)) return Error("Plano inexistente.");
+    var member = await db.Members.SingleOrDefaultAsync(x => x.Id == id);
+    if (member is null) return Results.NotFound();
+    member.PlanId = input.PlanId!;
+    await db.SaveChangesAsync();
+    return Results.NoContent();
+}).RequireAuthorization(p => p.RequireRole("admin"));
+
 app.MapGet("/api/moderation/reports", async (AppDb db) => Results.Ok(await db.Reports.AsNoTracking().OrderByDescending(x => x.CreatedAt).ThenByDescending(x => x.Id).Take(100).Select(x => new { x.Id, x.PostId, x.Reason, x.CreatedAt }).ToListAsync())).RequireAuthorization(p => p.RequireRole("admin"));
 
 app.MapPut("/api/moderation/posts/{id:guid}/hide", async (Guid id, AppDb db) =>
@@ -315,3 +367,4 @@ static Task SignIn(HttpContext ctx, Member user)
     return ctx.SignInAsync(new ClaimsPrincipal(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme)));
 }
 public partial class Program { }
+record PlanInput(string? PlanId);

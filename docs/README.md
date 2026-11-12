@@ -5,6 +5,7 @@ Comece por aqui. Cada projeto da solução tem um README com o que faz, em que c
 ## Mapa da solução (`backend/RadarPlural.slnx` + `frontend/`)
 | Projeto | Camada (arquitetura limpa) | Dono proposto | README |
 |---|---|---|---|
+| `RadarPlural.Domain` | Domínio (regras de negócio: rentabilidade) | Davidy | `backend/RadarPlural.Domain/README.md` |
 | `RadarPlural.Ingestion` | Domínio (regras da coleta) | Hugo | `backend/RadarPlural.Ingestion/README.md` |
 | `RadarPlural.Pipeline` | Aplicação (casos de uso e portas) | Hugo · Davidy (auditor) | `backend/RadarPlural.Pipeline/README.md` |
 | `RadarPlural.Infrastructure` | Infraestrutura (PostgreSQL) | Hugo | `backend/RadarPlural.Infrastructure/README.md` |
@@ -21,6 +22,7 @@ Regra de dependência: domínio e aplicação não conhecem banco nem web. Quem 
 |---|---|
 | `ARQUITETURA.md` | Visão geral e limites do produto |
 | `PIPELINE.md` | Como cada etapa funciona e por quê (PR #24) |
+| `RENTABILIDADE.md` | Regras RN01–RN04 com números (Ficha, Seção 3.3) |
 | `PADROES.md` | Padrões de projeto e polimorfismo no nosso código |
 | `AULAS.md` | Aulas de Kubernetes e arquitetura aplicadas ao projeto (PR #24) |
 | `BACKLOG.md`, `EQUIPE.md` | Tarefas B01–B10 e combinados |

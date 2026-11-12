@@ -46,7 +46,8 @@ public sealed class PostgresFixture : IAsyncLifetime
     public async Task DisposeAsync()
     {
         if (database is null) return;
-        await Db.DisposeAsync();
+        // Se a criação falhou no meio (servidor fora do ar), não mascara o erro real com outro na limpeza.
+        if (Db is not null) await Db.DisposeAsync();
         NpgsqlConnection.ClearAllPools();
         await using var admin = new NpgsqlConnection(adminConnection);
         await admin.OpenAsync();
@@ -216,5 +217,73 @@ public class PgStoryQueueTests(PostgresFixture pg)
         await stories.GroupAsync(now, default);
         Assert.Equal(StoryStatus.Agrupada, await pg.ScalarAsync<string>("""SELECT "Status" FROM "Stories" WHERE "Id" = $1""", id));
         Assert.Equal(v1 + 1, await pg.ScalarAsync<int>("""SELECT "Version" FROM "Stories" WHERE "Id" = $1""", id));
+    }
+}
+
+[Collection("postgres")]
+public class PgUsageLedgerTests(PostgresFixture pg)
+{
+    private static readonly RadarPlural.Domain.Billing.Plan Quota10 = new("teste", "Teste", 10m, 10);
+
+    private async Task<Guid> MemberAsync()
+    {
+        var id = Guid.NewGuid();
+        await pg.ExecAsync("""INSERT INTO "Members" ("Id", "Email", "DisplayName", "PasswordHash", "IsAdmin", "PlanId") VALUES ($1, $2, 'Teste', 'x', false, 'plus')""", id, $"{id:N}@example.invalid");
+        return id;
+    }
+
+    [IntegrationFact]
+    public async Task ConcurrentRequestsNeverExceedQuota()
+    {
+        var member = await MemberAsync();
+        var ledger = new PgUsageLedger(pg.Db);
+        var now = DateTimeOffset.UtcNow;
+        // 50 pedidos simultâneos (várias réplicas da API) contra quota 10.
+        var results = await Task.WhenAll(Enumerable.Range(0, 50).Select(_ => Task.Run(() => ledger.ReserveAsync(member, Quota10, Guid.NewGuid(), now, default))));
+        Assert.Equal(10, results.Count(r => r == RadarPlural.Domain.Billing.ReserveResult.Reserved));
+        Assert.Equal(40, results.Count(r => r == RadarPlural.Domain.Billing.ReserveResult.QuotaExceeded));
+        Assert.Equal(10, await ledger.UsedAsync(member, now, default));
+    }
+
+    [IntegrationFact]
+    public async Task SameKeyIsReservedOnlyOnce()
+    {
+        var member = await MemberAsync();
+        var ledger = new PgUsageLedger(pg.Db);
+        var key = Guid.NewGuid();
+        var now = DateTimeOffset.UtcNow;
+        var results = await Task.WhenAll(Enumerable.Range(0, 10).Select(_ => Task.Run(() => ledger.ReserveAsync(member, Quota10, key, now, default))));
+        Assert.Equal(1, results.Count(r => r == RadarPlural.Domain.Billing.ReserveResult.Reserved));
+        Assert.Equal(9, results.Count(r => r == RadarPlural.Domain.Billing.ReserveResult.AlreadyReserved));
+        Assert.Equal(1, await ledger.UsedAsync(member, now, default));
+    }
+
+    [IntegrationFact]
+    public async Task ReleaseGivesTheUnitBackOnceAndSettleKeepsIt()
+    {
+        var member = await MemberAsync();
+        var ledger = new PgUsageLedger(pg.Db);
+        var now = DateTimeOffset.UtcNow;
+        var a = Guid.NewGuid();
+        var b = Guid.NewGuid();
+        await ledger.ReserveAsync(member, Quota10, a, now, default);
+        await ledger.ReserveAsync(member, Quota10, b, now, default);
+        await ledger.SettleAsync(a, default);
+        await ledger.ReleaseAsync(b, default);
+        await ledger.ReleaseAsync(b, default); // repetido: não devolve duas vezes
+        await ledger.ReleaseAsync(a, default); // já liquidada: não devolve
+        Assert.Equal(1, await ledger.UsedAsync(member, now, default));
+    }
+
+    [IntegrationFact]
+    public async Task NewMonthStartsFromZeroAndZeroQuotaNeverReserves()
+    {
+        var member = await MemberAsync();
+        var ledger = new PgUsageLedger(pg.Db);
+        var nov = new DateTimeOffset(2026, 11, 30, 23, 0, 0, TimeSpan.Zero);
+        for (var i = 0; i < 10; i++) await ledger.ReserveAsync(member, Quota10, Guid.NewGuid(), nov, default);
+        Assert.Equal(RadarPlural.Domain.Billing.ReserveResult.QuotaExceeded, await ledger.ReserveAsync(member, Quota10, Guid.NewGuid(), nov, default));
+        Assert.Equal(RadarPlural.Domain.Billing.ReserveResult.Reserved, await ledger.ReserveAsync(member, Quota10, Guid.NewGuid(), nov.AddHours(2), default));
+        Assert.Equal(RadarPlural.Domain.Billing.ReserveResult.QuotaExceeded, await ledger.ReserveAsync(member, Quota10 with { MonthlyComparisons = 0 }, Guid.NewGuid(), nov.AddHours(2), default));
     }
 }

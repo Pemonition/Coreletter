@@ -58,6 +58,12 @@ TDD: executor RED 26 → GREEN (o teste "notícia nova devolve a história ao in
 
 Bug encontrado e corrigido: duas instâncias da API migrando juntas → uma cai. Linha de base de carga em 1 núcleo: ~480 req/s, p95 149 ms com 50 usuários, 0 erros.
 
+## Regra de rentabilidade, versão básica (12/11/2026, branch feat/rentabilidade, sobre feat/escala-pipeline)
+
+Projeto novo `RadarPlural.Domain` (Billing: RN01 quota, RN02 margem mínima, RN04 ponto de equilíbrio, porta `IUsageLedger`) e `PgUsageLedger` (RN03 reserva atômica). Migração `Rentabilidade` (`Members.PlanId`, `UsageMonths`, `UsageReservations`). Endpoints `/api/plans`, `/api/me/usage`, `/api/admin/members/{id}/plan`. API não inicia se um plano violar RN02 (verificado: Plus a R$ 7,06 derruba a inicialização).
+
+TDD: regras RED 26 → GREEN; reserva RED 4 → GREEN; total 218 testes, 3/3 execuções. Mutação: sem `WHERE used < quota` o teste de 50 pedidos simultâneos falha. Feita por Hugo como base para o Davidy (B07) melhorar; o `UsageBudget` em memória antigo continua no código até a B05 trocar pelo ledger.
+
 ## Próxima sessão
 
 1. Aceitar convites, conferir CI e executar B01 com PostgreSQL na máquina dos integrantes.
