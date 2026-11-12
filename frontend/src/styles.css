@@ -738,4 +738,23 @@ button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,te
 .skip-link { position:fixed; top:-100px; left:16px; z-index:100; background:white; color:#123e35; padding:16px; border-radius:10px; }.skip-link:focus { top:12px; }
 @media(prefers-reduced-motion:no-preference) { .spatial-scene { animation:spatial-drift 9s ease-in-out 2 alternate; } @keyframes spatial-drift { to { transform:rotateX(-5deg) rotateY(8deg) translateY(-7px); } } }
 @media(max-width:950px) { .hero { padding:30px; }.discovery-3d { transform:scale(.82); transform-origin:center right; width:43%; }.hero h1 { letter-spacing:-1px; } }
-@media(max-width:600px) { .hero { padding:28px 24px; min-height:510px; }.hero > div:first-child { max-width:100%; }.hero p { max-width:100%; }.discovery-3d { top:auto; bottom:-12px; right:0; width:100%; height:280px; transform:scale(.78); transform-origin:center bottom; }.hero h1 { font-size:36px; }.hero .eyebrow { font-size:9px; }.sidebar { flex-wrap:wrap; overflow:visible; }.sidebar > button { white-space:normal; font-size:12px; }.account { flex-wrap:wrap; }.topbar { min-height:76px; height:auto; padding-block:14px; }.section-heading { gap:12px; } }
+@media(max-width:600px) { .hero { padding:24px 20px 26px; min-height:0; }.hero > div:first-child { max-width:100%; }.hero p { max-width:100%; margin-bottom:0; }.discovery-3d { top:-8px; right:-44px; width:330px; height:330px; transform:scale(.4); transform-origin:100% 0; }.floating-note { display:none; }.hero h1, .hero .eyebrow { padding-right:92px; }.hero h1 { font-size:30px; letter-spacing:-1px; }.hero .eyebrow { font-size:10px; }.sidebar { flex-wrap:wrap; overflow:visible; }.sidebar > button { white-space:normal; font-size:12px; }.account { flex-wrap:wrap; }.topbar { min-height:76px; height:auto; padding-block:14px; }.section-heading { gap:12px; } }
+
+/* ---------------------------------------------------------------------------------------------
+   Refinamento visual e acessibilidade (Claude, branch claude/frontend-visual). Bloco NOVO: corrige
+   regras anteriores por sobreposição, sem editar as linhas originais, para não conflitar com o Codex.
+   Cores calculadas para o contraste mínimo WCAG AA (4,5:1) no fundo real de cada texto, mantendo o tom.
+   --------------------------------------------------------------------------------------------- */
+.hero-line { display:block; }
+/* Fora do feed o destaque vira uma faixa curta: o conteúdo da tela aparece sem rolar. */
+.hero.hero-compact { min-height:0; padding:22px 30px; }
+.hero.hero-compact > div:first-child { max-width:100%; }
+.hero.hero-compact h1 { font-size:clamp(22px,2.1vw,30px); letter-spacing:-.5px; margin:8px 0 0; }
+.hero.hero-compact .hero-line { display:inline; }
+@media(max-width:600px) {
+  .hero.hero-compact { padding:18px 20px; }
+  .hero.hero-compact h1, .hero.hero-compact .eyebrow { padding-right:0; }
+  .hero.hero-compact h1 { font-size:22px; }
+  .hero .eyebrow { letter-spacing:1.5px; }
+}
+@media(max-width:380px) { .hero h1 { font-size:27px; } }

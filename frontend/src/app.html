@@ -1,8 +1,6 @@
 <a class="skip-link" href="#main-content">Pular para o conteúdo</a>
 <header class="topbar">
-  <a class="brand" href="/" aria-label="Coreletter início"
-    ><span class="brand-icon">◉</span> Core<span>letter</span></a
-  ><span class="preview">PROJETO TCC · DEMONSTRAÇÃO</span>
+  <app-brand /><span class="preview">PROJETO TCC · DEMONSTRAÇÃO</span>
   <div class="account">
     @if(user();as u){<span class="username">{{u.displayName}}</span
     ><button class="quiet" (click)="logout()">Sair</button>}@else{<button
@@ -36,17 +34,7 @@
     </div>
   </aside>
   <main id="main-content" tabindex="-1">
-    <section class="hero">
-      <div>
-        <div class="eyebrow">UM RADAR. MUITAS PERSPECTIVAS.</div>
-        <h1>Boas descobertas<br />merecem circular.</h1>
-        <p>
-          Notícias, podcasts e músicas compartilhados por pessoas curiosas como
-          você.
-        </p>
-      </div>
-      <div class="discovery-3d" aria-hidden="true"><div class="spatial-scene"><div class="planet"><span>c.</span></div><div class="planet-ring ring-one"></div><div class="planet-ring ring-two"></div><div class="floating-note note-one">✦ Tecnologia</div><div class="floating-note note-two">◉ Novas perspectivas</div><div class="satellite"></div></div></div>
-    </section>
+    <app-hero [compacto]="view !== 'feed'" />
     @if(error()){
     <div class="message error" role="alert">
       {{error()}}
