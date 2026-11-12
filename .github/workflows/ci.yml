@@ -26,7 +26,11 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
-      - run: dotnet test backend/RadarPlural.slnx --configuration Release
+      - name: Testes (unitários + integração com PostgreSQL)
+        env:
+          # Servidor descartável: os testes de integração criam e apagam bancos temporários (PgStoryQueueTests).
+          INTEGRATION_DATABASE_URL: Host=localhost;Port=5432;Database=coreletter_ci;Username=coreletter_ci;Password=disposable-ci-only-password
+        run: dotnet test backend/RadarPlural.slnx --configuration Release
       - name: Iniciar API com PostgreSQL descartavel
         env:
           ASPNETCORE_ENVIRONMENT: Development
@@ -87,7 +91,23 @@ jobs:
           --health-retries 15
     steps:
       - uses: actions/checkout@v5
+      - name: Validar manifests do Kubernetes (esquema oficial)
+        run: >-
+          docker run --rm -v "$PWD/deploy/k8s:/k8s:ro" ghcr.io/yannh/kubeconform:v0.6.7
+          -strict -summary -kubernetes-version 1.31.0 -ignore-filename-pattern "(kustomization\.yaml|custo\.json)$" /k8s
       - run: docker build -t coreletter .
+      - run: docker build -f Dockerfile.worker -t coreletter-worker .
+      - name: Migração como passo único (o que o Job do Kubernetes faz)
+        run: >-
+          docker run --rm --network host
+          -e "ConnectionStrings__Default=postgresql://coreletter_ci:disposable-ci-only-password@localhost:5432/coreletter_ci"
+          coreletter --migrate-only
+      - name: Worker inicia na imagem
+        run: |
+          set +e
+          docker run --rm coreletter-worker --etapa inexistente
+          code=$?
+          test "$code" -eq 2 || { echo "esperado código 2 (etapa inexistente), veio $code"; exit 1; }
       - name: Iniciar container
         # Development aqui so para o cookie aceitar http no teste; em producao o cookie exige https.
         run: |

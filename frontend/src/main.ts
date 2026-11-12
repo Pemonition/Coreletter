@@ -21,6 +21,50 @@ interface Post {
   createdAt: string;
   isSaved: boolean;
 }
+// Histórias: a mesma notícia em veículos diferentes (GET /api/stories). Comparação: contrato v1 (docs/contratos).
+interface StorySource {
+  id: string;
+  sourceId: string;
+  sourceName: string;
+  url: string;
+  title: string;
+  publishedAt: string | null;
+}
+interface Story {
+  id: string;
+  title: string;
+  topic: string;
+  sourceCount: number;
+  itemCount: number;
+  lastPublishedAt: string;
+  items: StorySource[];
+}
+interface Evidence {
+  itemId: string;
+  quote: string;
+}
+interface Claim {
+  id: string;
+  text: string;
+  status: "concordante" | "divergente" | "unica_fonte" | "evidencia_insuficiente";
+  supportedBy: string[];
+  contradictedBy: string[];
+  evidence: Evidence[];
+}
+interface Comparison {
+  provider: string;
+  simulated: boolean;
+  createdAt: string;
+  sources: { itemId: string; sourceId: string; sourceName: string; url: string; title: string }[];
+  claims: Claim[];
+  summary: { concordantes: number; divergentes: number; unicaFonte: number; evidenciaInsuficiente: number };
+  limitations: string[];
+}
+interface Usage {
+  planName: string;
+  used: number;
+  quota: number;
+}
 interface Report {
   id: string;
   postId: string;
@@ -37,6 +81,10 @@ class App {
   user = signal<User | null>(null);
   posts = signal<Post[]>([]);
   reports = signal<Report[]>([]);
+  stories = signal<Story[]>([]);
+  comparisons = signal<Record<string, Comparison>>({});
+  comparing = signal("");
+  usage = signal<Usage | null>(null);
   loading = signal(false);
   busy = signal(false);
   error = signal("");
@@ -100,6 +148,15 @@ class App {
     this.loading.set(true);
     this.error.set("");
     try {
+      if (this.view === "stories") {
+        const result = await this.api<{ items: Story[]; total: number }>(
+          "/stories?" + new URLSearchParams({ minSources: "2", page: String(this.page), pageSize: String(this.pageSize) }),
+        );
+        this.stories.set(result.items);
+        this.total = result.total;
+        if (this.user()) void this.loadUsage();
+        return;
+      }
       if (this.view === "moderation") {
         this.reports.set(await this.api<Report[]>("/moderation/reports"));
         return;
@@ -164,8 +221,60 @@ class App {
       this.fail(e);
     }
   }
+  async loadUsage() {
+    try {
+      this.usage.set(await this.api<Usage>("/me/usage"));
+    } catch {
+      this.usage.set(null);
+    }
+  }
+  // Primeiro tenta a comparação já pronta (pública, não gasta quota). Só pede uma nova se não houver.
+  async compare(story: Story) {
+    if (this.comparisons()[story.id]) {
+      this.comparisons.update((all) => {
+        const { [story.id]: _, ...rest } = all;
+        return rest;
+      });
+      return;
+    }
+    this.comparing.set(story.id);
+    this.error.set("");
+    this.notice.set("");
+    try {
+      let comparison: Comparison | null = null;
+      try {
+        comparison = (await this.api<{ comparison: Comparison }>(`/stories/${story.id}/comparison`)).comparison;
+      } catch {}
+      if (!comparison) {
+        if (!this.user()) {
+          this.authOpen = true;
+          this.notice.set("Entre na sua conta para pedir uma comparação.");
+          return;
+        }
+        const result = await this.api<{ comparison: Comparison; usage: { units: number; fromCache: boolean } }>("/comparisons", {
+          method: "POST",
+          headers: { "Idempotency-Key": crypto.randomUUID() },
+          body: JSON.stringify({ storyId: story.id }),
+        });
+        comparison = result.comparison;
+        if (result.usage.units > 0) this.notice.set("Comparação feita: 1 uso do seu plano neste mês.");
+        void this.loadUsage();
+      }
+      this.comparisons.update((all) => ({ ...all, [story.id]: comparison! }));
+    } catch (e) {
+      this.fail(e);
+    } finally {
+      this.comparing.set("");
+    }
+  }
+  sourceName(comparison: Comparison, itemId: string) {
+    return comparison.sources.find((s) => s.itemId === itemId)?.sourceName ?? "Fonte";
+  }
+  statusLabel(status: Claim["status"]) {
+    return { concordante: "Concordam", divergente: "Divergem", unica_fonte: "Só uma fonte", evidencia_insuficiente: "Sem evidência suficiente" }[status];
+  }
   select(view: string) {
-    if (view !== "feed" && !this.user()) {
+    if (view !== "feed" && view !== "stories" && !this.user()) {
       this.authOpen = true;
       return;
     }

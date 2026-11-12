@@ -18,4 +18,9 @@
     <None Update="fontes.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\RadarPlural.Pipeline\RadarPlural.Pipeline.csproj" />
+    <ProjectReference Include="..\RadarPlural.Infrastructure\RadarPlural.Infrastructure.csproj" />
+  </ItemGroup>
+
 </Project>

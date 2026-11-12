@@ -88,9 +88,26 @@ dotnet run --project backend/RadarPlural.Worker -- --fonte tecnoblog
 
 Rodar de novo não duplica notícias. Uma fonte fora do ar não interrompe as outras.
 
+Depois de coletar, o Worker faz duas etapas sem IA (`docs/decisoes/0003-pipeline-auditoria-video.md`, guia em `docs/PIPELINE.md`):
+- **Triagem:** descarta oferta/afiliado (caminhos em `excludeUrlContains` de cada fonte e padrões de título), resumos do dia e notícia com mais de 7 dias, gravando o motivo. Caça-clique só recebe uma marca. A cada execução, as notícias das últimas 72 h são reavaliadas pelas regras atuais.
+- **Agrupamento:** junta a mesma notícia de veículos diferentes em uma **história** (`GET /api/stories`). Regra: 3+ palavras relevantes em comum, sendo ao menos 1 nome próprio, em até 48 h. Os ids das histórias se mantêm entre execuções.
+
+O `--dry-run` mostra o que seria descartado e as histórias com 2+ fontes, sem banco.
+
 Na nuvem, o GitHub Actions roda o coletor a cada 3 horas (`.github/workflows/ingestao.yml`). Para gravar no banco do Render, crie o secret **INGESTAO_DATABASE_URL** em *Settings → Secrets and variables → Actions*, com a *External Database URL* do PostgreSQL do Render terminada em `?sslmode=require`. Sem o secret, o workflow roda só `--dry-run`.
 
 Para incluir uma fonte: o site precisa publicar RSS/Atom em https e não bloquear robôs. Use a URL final, depois de redirecionamentos (com ou sem `www`), porque o coletor não segue redirecionamento para fora da lista. Teste com `--dry-run --fonte <id>` e abra PR.
+
+## Escala e Kubernetes
+
+O sistema foi preparado para rodar várias cópias de cada parte (`docs/decisoes/0004-escala-desde-o-mvp.md`): API sem estado, etapas do pipeline reservando trabalho no banco com `FOR UPDATE SKIP LOCKED`, migração em passo único e teto de custo testado. Deploy local no Kubernetes do Docker Desktop: `deploy/k8s/README.md`. Teste de carga: `scripts/carga/`.
+
+Testes de integração com PostgreSQL rodam quando há um servidor descartável:
+```powershell
+$env:INTEGRATION_DATABASE_URL = "Host=localhost;Port=5433;Database=postgres;Username=radarplural;Password=<a do .env>"
+dotnet test backend/RadarPlural.slnx
+```
+Sem a variável, eles aparecem como ignorados.
 
 ## Colaboração
 
