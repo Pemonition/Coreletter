@@ -1,7 +1,8 @@
 namespace RadarPlural.Ingestion;
 
 // Fonte aprovada na política de ingestão (docs/decisoes/0002-ingestao.md). Só entra por PR revisada.
-public sealed record FeedSource(string Id, string Name, Uri Url, string Topic);
+// ExcludeUrlContains: trechos de caminho que a fonte usa para oferta/afiliado (ex.: "/achados/"). Triagem descarta.
+public sealed record FeedSource(string Id, string Name, Uri Url, string Topic, IReadOnlyList<string>? ExcludeUrlContains = null);
 
 // Item já higienizado: texto puro, URL absoluta normalizada, tamanhos dentro da política.
 public sealed record FeedEntry(string Title, string Url, string Summary, DateTimeOffset? PublishedAt);

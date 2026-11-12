@@ -26,6 +26,7 @@ catch (Exception e) when (e is IngestionException or IOException)
     return 2;
 }
 var allowed = SourceCatalog.AllowedHosts(sources); // a lista de permissão é sempre a lista inteira
+var catalog = sources.ToDictionary(x => x.Id); // retriagem usa a lista inteira, mesmo com --fonte
 if (only is not null) sources = sources.Where(s => s.Id == only).ToList();
 if (sources.Count == 0)
 {
@@ -52,7 +53,8 @@ var fetcher = new SafeFeedFetcher(http, policy);
 using var shutdown = new CancellationTokenSource(TimeSpan.FromMinutes(10));
 Console.CancelKeyPress += (_, e) => { e.Cancel = true; shutdown.Cancel(); };
 
-int failures = 0, totalNew = 0, totalRead = 0;
+int failures = 0, totalNew = 0, totalRead = 0, totalDiscarded = 0;
+var dryRunCandidates = new List<ClusterCandidate>();
 foreach (var source in sources)
 {
     var clock = Stopwatch.StartNew();
@@ -61,16 +63,22 @@ foreach (var source in sources)
         var bytes = await fetcher.FetchAsync(source.Url, allowed, shutdown.Token);
         var entries = FeedParser.Parse(new MemoryStream(bytes), source.Url, policy);
         totalRead += entries.Count;
+        var now = DateTimeOffset.UtcNow;
+        var triaged = entries.Select(e => (Entry: e, Triage: Triage.Evaluate(source, e, now))).ToList();
+        var discarded = triaged.Count(t => !t.Triage.Accepted);
+        totalDiscarded += discarded;
         if (store is null)
         {
-            Log($"OK   {source.Id}: {entries.Count} itens ({bytes.Length / 1024} KB, {clock.ElapsedMilliseconds} ms) [dry-run]");
-            foreach (var e in entries.Take(3)) Log($"       - {e.PublishedAt:yyyy-MM-dd HH:mm} | {e.Title}");
+            Log($"OK   {source.Id}: {entries.Count} itens, {discarded} descartados na triagem ({bytes.Length / 1024} KB, {clock.ElapsedMilliseconds} ms) [dry-run]");
+            foreach (var t in triaged.Where(t => !t.Triage.Accepted).Take(2)) Log($"       x {t.Triage.DiscardReason}: {t.Entry.Title}");
+            dryRunCandidates.AddRange(triaged.Where(t => t.Triage.Accepted)
+                .Select(t => new ClusterCandidate(Guid.NewGuid(), source.Id, t.Entry.Title, t.Entry.PublishedAt ?? now)));
         }
         else
         {
-            var inserted = await store.SaveAsync(source, entries, DateTimeOffset.UtcNow, shutdown.Token);
+            var inserted = await store.SaveAsync(source, triaged, now, shutdown.Token);
             totalNew += inserted;
-            Log($"OK   {source.Id}: {entries.Count} itens, {inserted} novos ({clock.ElapsedMilliseconds} ms)");
+            Log($"OK   {source.Id}: {entries.Count} itens, {inserted} novos, {discarded} descartados na triagem ({clock.ElapsedMilliseconds} ms)");
         }
     }
     catch (IngestionException e)
@@ -86,7 +94,36 @@ foreach (var source in sources)
     await Task.Delay(TimeSpan.FromSeconds(1), shutdown.Token); // educação com os servidores das fontes
 }
 
-Log($"FIM  {sources.Count} fontes, {failures} com falha, {totalRead} itens lidos" + (store is null ? "" : $", {totalNew} novos"));
+// Agrupamento: junta a mesma notícia publicada por veículos diferentes (decisoes/0003).
+if (dataSource is not null && failures < sources.Count)
+{
+    try
+    {
+        var storyStore = new StoryStore(dataSource);
+        var retriaged = await storyStore.RetriageAsync(catalog, DateTimeOffset.UtcNow, shutdown.Token);
+        if (retriaged > 0) Log($"TRIA {retriaged} notícias já gravadas descartadas pelas regras atuais");
+        var (stories, created, corroborated) = await storyStore.GroupAsync(DateTimeOffset.UtcNow, shutdown.Token);
+        Log($"HIST {stories} histórias nas últimas 72 h ({created} novas), {corroborated} com 2+ fontes");
+    }
+    catch (NpgsqlException e)
+    {
+        Log($"ERRO banco no agrupamento: {e.Message}. A API já aplicou a migração TriagemHistorias?");
+        return 3;
+    }
+}
+else if (dataSource is null)
+{
+    var byId = dryRunCandidates.ToDictionary(c => c.Id);
+    var groups = StoryClusterer.Cluster(dryRunCandidates).Where(g => g.Select(i => byId[i].SourceId).Distinct().Count() >= 2).OrderByDescending(g => g.Count).ToList();
+    Log($"HIST {groups.Count} histórias com 2+ fontes [dry-run]");
+    foreach (var g in groups.Take(5))
+    {
+        Log($"       {g.Count} itens:");
+        foreach (var i in g) Log($"         {byId[i].SourceId}: {byId[i].Title}");
+    }
+}
+
+Log($"FIM  {sources.Count} fontes, {failures} com falha, {totalRead} itens lidos, {totalDiscarded} descartados" + (store is null ? "" : $", {totalNew} novos"));
 if (dataSource is not null) await dataSource.DisposeAsync();
 // Uma fonte fora do ar não é erro da execução; todas falhando indica problema nosso (rede, política, parser).
 return failures == sources.Count ? 1 : 0;
