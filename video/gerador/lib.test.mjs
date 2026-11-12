@@ -134,3 +134,45 @@ test("detecta composição editada à mão (não sobrescreve o trabalho do Studi
   assert.equal(foiEditada(html.replace("Olá", "Oi")), true);
   assert.equal(foiEditada("<html>sem assinatura</html>"), true);
 });
+
+test("cena de código: valida, escapa e não deixa trecho grande demais", async () => {
+  const { destacar } = await import("./lib.mjs");
+  const base = { versao: 1, id: "c", titulo: "C", cenas: [{ tipo: "codigo", duracao: 10, titulo: "T", texto: "Por quê", arquivo: "a/b.cs", linha: 1, linguagem: "csharp", codigo: 'if (x < 3) return "<b>";' }] };
+  assert.deepEqual(validarRoteiro(base), []);
+  const html = composicao(base);
+  assert.doesNotMatch(html, /<b>/);
+  assert.match(html, /&lt;b&gt;/);
+  assert.match(html, /font-family: "JetBrains Mono"/);
+  assert.match(destacar("SELECT \"Id\" FROM t -- nota", "sql"), /<span class="c-kw">SELECT<\/span> &quot;Id&quot;/);
+  const grande = structuredClone(base);
+  grande.cenas[0].codigo = Array.from({ length: 17 }, (_, i) => `linha ${i}`).join("\n");
+  assert.match(validarRoteiro(grande).join(), /até 16 linhas na tela/);
+  // Vídeo sem cena de código não muda (fonte e estilo de código só entram quando precisa).
+  assert.doesNotMatch(composicao(JSON.parse(await readFile(new URL("../roteiros/como-funciona.json", import.meta.url), "utf8"))), /JetBrains/);
+});
+
+test("tour do código: roteiro em dia com a fonte e com os arquivos reais", async () => {
+  const { trecho } = await import("./tour.mjs");
+  const { existsSync } = await import("node:fs");
+  const fonte = JSON.parse(await readFile(new URL("../roteiros/tour-do-codigo.fonte.json", import.meta.url), "utf8"));
+  const salvo = JSON.parse(await readFile(new URL("../roteiros/tour-do-codigo.json", import.meta.url), "utf8"));
+  assert.deepEqual(validarRoteiro(salvo), []);
+  const codigo = salvo.cenas.filter((c) => c.tipo === "codigo");
+  assert.deepEqual(codigo.map((c) => [c.titulo, c.arquivo, c.linha]), fonte.partes.map((p) => [p.titulo, p.arquivo, p.linhas[0]]), "roteiro desatualizado: rode node video/gerador/tour.mjs");
+  // Confere cada trecho contra o arquivo real. Arquivo que ainda não está nesta branch (antes da #33 entrar) é pulado.
+  const raiz = new URL("../../", import.meta.url);
+  let conferidos = 0;
+  for (const [i, p] of fonte.partes.entries()) {
+    if (!existsSync(new URL(p.arquivo, raiz))) continue;
+    const real = trecho(await readFile(new URL(p.arquivo, raiz), "utf8"), p.linhas);
+    assert.equal(codigo[i].codigo, real, `${p.arquivo} mudou: rode node video/gerador/tour.mjs --docs docs/TOUR.md`);
+    conferidos++;
+  }
+  assert.ok(conferidos >= 1, "nenhum arquivo do tour encontrado");
+});
+
+test("composição do tour commitada em dia com o roteiro", async () => {
+  const r = JSON.parse(await readFile(new URL("../roteiros/tour-do-codigo.json", import.meta.url), "utf8"));
+  const gerada = await readFile(new URL("../composicoes/tour-do-codigo/index.html", import.meta.url), "utf8");
+  assert.equal(gerada, composicao(r), "rode: node video/gerador/gerar.mjs video/roteiros/tour-do-codigo.json");
+});
