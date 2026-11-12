@@ -17,14 +17,14 @@
 <div class="layout">
   <aside class="sidebar">
     <div class="side-label">SEU ESPAÇO</div>
-    <button [class.active]="view==='stories'" (click)="select('stories')">
+    <button [class.active]="view==='stories'" [attr.aria-current]="view==='stories' ? 'page' : null" (click)="select('stories')">
       <span>◎</span> Histórias e fontes</button
-    ><button [class.active]="view==='feed'" (click)="select('feed')">
+    ><button [class.active]="view==='feed'" [attr.aria-current]="view==='feed' ? 'page' : null" (click)="select('feed')">
       <span>◫</span> Feed da comunidade</button
-    ><button [class.active]="view==='saved'" (click)="select('saved')">
+    ><button [class.active]="view==='saved'" [attr.aria-current]="view==='saved' ? 'page' : null" (click)="select('saved')">
       <span>◇</span> Itens salvos</button
     >@if(user()?.isAdmin){<button
-      [class.active]="view==='moderation'"
+      [class.active]="view==='moderation'" [attr.aria-current]="view==='moderation' ? 'page' : null"
       (click)="select('moderation')"
     >
       <span>⚑</span> Moderação</button

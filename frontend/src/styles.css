@@ -628,17 +628,21 @@ textarea {
     display: block;
     padding: 15px 5%;
   }
+  /* #15: as abas quebram linha em vez de rolar escondidas; todas ficam visíveis em 360 px. */
   .sidebar {
     display: flex;
-    gap: 4px;
+    flex-wrap: wrap;
+    gap: 6px;
     padding: 0;
     margin-bottom: 15px;
-    overflow: auto;
   }
   .sidebar > button {
     width: auto;
+    flex: 1 1 auto;
+    justify-content: center;
     white-space: nowrap;
-    font-size: 11px;
+    font-size: 12px;
+    min-height: 40px;
   }
   .side-label,
   .side-note {
@@ -722,3 +726,5 @@ textarea {
 .comparison blockquote { margin: 0; font-size: .92rem; overflow-wrap: anywhere; }
 .comparison blockquote span { font-weight: 600; }
 .comparison details summary { cursor: pointer; color: var(--muted, #667085); }
+
+.sidebar > button:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
