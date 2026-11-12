@@ -13,6 +13,7 @@ Base `/api`; autenticação cookie HttpOnly (proxy Angular para http://localhost
 - POST /posts/{id}/reports {reason} ->204
 - GET /moderation/reports -> [{id,postId,reason,createdAt}] administrador
 - PUT /moderation/posts/{id}/hide ->204 administrador
+- GET /health -> 200 {status:"ok"} (vivo; não consulta o banco). GET /health/ready -> 200 {status:"ready"} ou 503 {status:"unavailable"} (pronto; consulta o banco em até 2 s). Usados pelas sondas do Kubernetes (deploy/k8s).
 - GET /news?page=1&pageSize=20&topic=&source= -> {items:[NewsItem],page,pageSize,total}; público; só notícias aprovadas na triagem; pageSize máx. 50; ordem por publicação (ou coleta) decrescente. topic exato (ex.: tecnologia, geral); source = id da fonte em fontes.json.
 - GET /stories?page=1&pageSize=20&topic=&minSources=1 -> {items:[Story],page,pageSize,total}; público; ordem pela notícia mais recente. minSources=2 mostra só histórias corroboradas por 2+ veículos.
 Post: {id,url,title,topic,type,comment,authorId,authorName,createdAt,isSaved}.

@@ -46,6 +46,9 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 });
 
 builder.Services.AddAuthorization();
+// Limite por IP. Memória de cada réplica: com N réplicas o limite efetivo é até N× (decisoes/0004).
+// Configurável (RateLimit__PermitPerMinute) para teste de carga; padrão 60.
+var permitPerMinute = builder.Configuration.GetValue("RateLimit:PermitPerMinute", 60);
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -54,7 +57,7 @@ builder.Services.AddRateLimiter(options =>
             context.Connection.RemoteIpAddress?.ToString() ?? "local",
             _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
             {
-                PermitLimit = 60,
+                PermitLimit = permitPerMinute,
                 Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0
             }));
@@ -84,11 +87,25 @@ app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Migrações versionadas em todos os ambientes; o administrador é promovido só se a conta já existir.
+// Migrações versionadas; o administrador é promovido só se a conta já existir.
+// Com várias réplicas (Kubernetes), migrar ao iniciar causa disputa: testado com 2 instâncias juntas, uma caiu com
+// "column already exists" (decisoes/0004). Por isso:
+//   --migrate-only                 aplica as migrações e sai (Job "coreletter-migrate" roda antes das réplicas);
+//   Database__MigrateOnStartup=false   réplicas não migram (padrão true mantém Render e uso local como estão).
+var migrateOnly = args.Contains("--migrate-only");
+if (migrateOnly || builder.Configuration.GetValue("Database:MigrateOnStartup", true))
+{
+    using var scope = app.Services.CreateScope();
+    await scope.ServiceProvider.GetRequiredService<AppDb>().Database.MigrateAsync();
+    if (migrateOnly)
+    {
+        app.Logger.LogInformation("Migrações aplicadas (--migrate-only).");
+        return;
+    }
+}
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDb>();
-    await db.Database.MigrateAsync();
     var adminEmail = builder.Configuration["BootstrapAdminEmail"];
     if (!string.IsNullOrWhiteSpace(adminEmail))
     {
@@ -100,7 +117,25 @@ app.UseAuthorization();
         }
     }
 }
+// Vivo (liveness): só diz que o processo responde. NÃO consulta o banco: se consultasse, uma queda do banco
+// faria o Kubernetes reiniciar todas as réplicas da API à toa (decisoes/0004).
 app.MapGet("/api/health", () => Results.Ok(new { status = "ok" }));
+// Pronto (readiness): só recebe tráfego a réplica que alcança o banco. Falha = 503, o Service tira a réplica da rotação.
+app.MapGet("/api/health/ready", async (AppDb db, CancellationToken ct) =>
+{
+    using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
+    timeout.CancelAfter(TimeSpan.FromSeconds(2));
+    try
+    {
+        return await db.Database.CanConnectAsync(timeout.Token)
+            ? Results.Ok(new { status = "ready" })
+            : Results.Json(new { status = "unavailable" }, statusCode: 503);
+    }
+    catch (Exception e) when (e is OperationCanceledException or System.Net.Sockets.SocketException or Npgsql.NpgsqlException)
+    {
+        return Results.Json(new { status = "unavailable" }, statusCode: 503);
+    }
+});
 
 app.MapPost("/api/auth/register", async (RegisterInput input, AppDb db, IPasswordHasher<Member> hasher, HttpContext ctx) =>
 {

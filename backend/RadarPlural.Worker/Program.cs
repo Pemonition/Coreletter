@@ -2,13 +2,19 @@ using System.Diagnostics;
 using Npgsql;
 using RadarPlural.Api;
 using RadarPlural.Ingestion;
-using RadarPlural.Worker;
+using RadarPlural.Infrastructure;
+using RadarPlural.Pipeline;
 
 // Coletor de notícias: roda uma vez, percorre as fontes aprovadas e termina.
 // Agendado pelo GitHub Actions (.github/workflows/ingestao.yml); pode rodar à mão:
 //   dotnet run --project backend/RadarPlural.Worker -- --dry-run            (não grava; mostra o que coletaria)
 //   dotnet run --project backend/RadarPlural.Worker -- --fonte tecnoblog    (só uma fonte)
 // Banco: variável ConnectionStrings__Default (mesma da API; aceita URL postgresql://).
+//
+// Modo etapa (docs/decisoes/0004): processa histórias de uma etapa do pipeline. Pode rodar em N réplicas ao mesmo tempo.
+//   dotnet run --project backend/RadarPlural.Worker -- --etapa auditoria [--lote 10] [--continuo]
+
+if (ArgValue("--etapa") is { } stageName) return await RunStageAsync(stageName);
 
 var dryRun = args.Contains("--dry-run");
 var only = ArgValue("--fonte");
@@ -127,6 +133,60 @@ Log($"FIM  {sources.Count} fontes, {failures} com falha, {totalRead} itens lidos
 if (dataSource is not null) await dataSource.DisposeAsync();
 // Uma fonte fora do ar não é erro da execução; todas falhando indica problema nosso (rede, política, parser).
 return failures == sources.Count ? 1 : 0;
+
+async Task<int> RunStageAsync(string name)
+{
+    var stage = Stages.Find(name);
+    if (stage is null)
+    {
+        Log($"ERRO etapa '{name}' não existe. Etapas: {string.Join(", ", Stages.All.Select(s => s.Name))}.");
+        return 2;
+    }
+    // Adaptadores de cada etapa entram aqui quando existirem (portas em RadarPlural.Pipeline/Ports.cs):
+    // auditoria = B05 (simulado) / B09 (Gemini); roteiro = #19; video = #20.
+    IStageHandler? handler = stage.Name switch
+    {
+        _ => null
+    };
+    if (handler is null)
+    {
+        Log($"ERRO etapa '{stage.Name}' ainda sem adaptador configurado. Ver RadarPlural.Pipeline/Ports.cs e docs/decisoes/0004.");
+        return 4;
+    }
+    var connection = Environment.GetEnvironmentVariable("ConnectionStrings__Default");
+    if (string.IsNullOrWhiteSpace(connection))
+    {
+        Log("ERRO defina ConnectionStrings__Default.");
+        return 2;
+    }
+    var batch = int.TryParse(ArgValue("--lote"), out var b) ? b : 10;
+    var continuous = args.Contains("--continuo");
+    // Nome único por réplica: no Kubernetes, HOSTNAME é o nome do pod.
+    var workerId = $"{Environment.GetEnvironmentVariable("HOSTNAME") ?? Environment.MachineName}-{Environment.ProcessId}";
+    await using var db = NpgsqlDataSource.Create(DatabaseUrl.ToNpgsql(connection));
+    var runner = new StageRunner(new PgStoryQueue(db), handler, workerId, TimeProvider.System);
+
+    // SIGTERM (Kubernetes) ou Ctrl+C: termina a história atual e sai; o lease das não iniciadas expira e outra réplica retoma.
+    using var stop = new CancellationTokenSource();
+    Console.CancelKeyPress += (_, e) => { e.Cancel = true; stop.Cancel(); };
+    AppDomain.CurrentDomain.ProcessExit += (_, _) => stop.Cancel();
+
+    do
+    {
+        try
+        {
+            var r = await runner.RunOnceAsync(batch, stop.Token);
+            if (r.Claimed > 0) Log($"ETAPA {stage.Name}: {r.Claimed} reservadas, {r.Completed} concluídas, {r.Retrying} para tentar de novo, {r.GaveUp} falharam, {r.Stale} desatualizadas, {r.LeaseLost} perdidas");
+            if (continuous && r.Claimed == 0) await Task.Delay(TimeSpan.FromSeconds(10), stop.Token);
+        }
+        catch (OperationCanceledException) when (stop.IsCancellationRequested)
+        {
+            break;
+        }
+    } while (continuous && !stop.IsCancellationRequested);
+    Log($"FIM  etapa {stage.Name} ({workerId})");
+    return 0;
+}
 
 string? ArgValue(string name)
 {

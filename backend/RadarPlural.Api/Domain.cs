@@ -46,6 +46,10 @@ public sealed class AppDb(DbContextOptions<AppDb> options) : DbContext(options),
             e.Property(x => x.Topic).HasMaxLength(60);
             e.Property(x => x.Status).HasMaxLength(20).HasDefaultValue("agrupada");
             e.HasIndex(x => x.LastPublishedAt);
+            // Fila do pipeline (decisoes/0004): várias réplicas de worker reservam histórias com FOR UPDATE SKIP LOCKED.
+            e.Property(x => x.LeaseOwner).HasMaxLength(100);
+            e.Property(x => x.LastError).HasMaxLength(500);
+            e.HasIndex(x => new { x.Status, x.LeaseUntil });
         });
     }
 }
@@ -199,6 +203,12 @@ public class Story
     public DateTimeOffset FirstPublishedAt { get; set; }
     public DateTimeOffset LastPublishedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
+    public int Attempts { get; set; }
+    public string? LeaseOwner { get; set; }
+    public DateTimeOffset? LeaseUntil { get; set; }
+    public string? LastError { get; set; }
+    // Sobe quando o agrupamento muda as notícias da história: trabalho feito sobre versão antiga não avança o estado.
+    public int Version { get; set; }
 }
 public record RegisterInput(string Email, string Password, string DisplayName);
 

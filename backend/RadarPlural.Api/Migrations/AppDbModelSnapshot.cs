@@ -238,13 +238,27 @@ namespace RadarPlural.Api.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<int>("Attempts")
+                        .HasColumnType("integer");
+
                     b.Property<DateTimeOffset>("FirstPublishedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("ItemCount")
                         .HasColumnType("integer");
 
+                    b.Property<string>("LastError")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
                     b.Property<DateTimeOffset>("LastPublishedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("LeaseOwner")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<DateTimeOffset?>("LeaseUntil")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("SourceCount")
@@ -270,9 +284,14 @@ namespace RadarPlural.Api.Migrations
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("Version")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.HasIndex("LastPublishedAt");
+
+                    b.HasIndex("Status", "LeaseUntil");
 
                     b.ToTable("Stories");
                 });

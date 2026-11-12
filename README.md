@@ -95,6 +95,17 @@ Na nuvem, o GitHub Actions roda o coletor a cada 3 horas (`.github/workflows/ing
 
 Para incluir uma fonte: o site precisa publicar RSS/Atom em https e não bloquear robôs. Use a URL final, depois de redirecionamentos (com ou sem `www`), porque o coletor não segue redirecionamento para fora da lista. Teste com `--dry-run --fonte <id>` e abra PR.
 
+## Escala e Kubernetes
+
+O sistema foi preparado para rodar várias cópias de cada parte (`docs/decisoes/0004-escala-desde-o-mvp.md`): API sem estado, etapas do pipeline reservando trabalho no banco com `FOR UPDATE SKIP LOCKED`, migração em passo único e teto de custo testado. Deploy local no Kubernetes do Docker Desktop: `deploy/k8s/README.md`. Teste de carga: `scripts/carga/`.
+
+Testes de integração com PostgreSQL rodam quando há um servidor descartável:
+```powershell
+$env:INTEGRATION_DATABASE_URL = "Host=localhost;Port=5433;Database=postgres;Username=radarplural;Password=<a do .env>"
+dotnet test backend/RadarPlural.slnx
+```
+Sem a variável, eles aparecem como ignorados.
+
 ## Colaboração
 
 Repositório: https://github.com/Pemonition/Coreletter. Para a equipe iniciar:

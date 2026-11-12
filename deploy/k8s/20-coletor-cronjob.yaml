@@ -1,0 +1,34 @@
+# Coletor + triagem + agrupamento, a cada 3 h (o mesmo que o GitHub Actions faz hoje).
+# concurrencyPolicy Forbid: o agrupamento é uma tarefa única por vez (não escala horizontalmente de propósito).
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: coreletter-coletor
+  namespace: coreletter
+spec:
+  schedule: "17 */3 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 900
+      template:
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+          containers:
+            - name: coletor
+              image: coreletter-worker:local
+              imagePullPolicy: IfNotPresent
+              envFrom:
+                - secretRef:
+                    name: coreletter-secrets
+              resources:
+                requests: { cpu: 100m, memory: 128Mi }
+                limits: { cpu: 500m, memory: 256Mi }
+              securityContext:
+                allowPrivilegeEscalation: false
+                capabilities: { drop: ["ALL"] }
