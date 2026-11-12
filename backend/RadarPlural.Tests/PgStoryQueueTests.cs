@@ -287,3 +287,32 @@ public class PgUsageLedgerTests(PostgresFixture pg)
         Assert.Equal(RadarPlural.Domain.Billing.ReserveResult.QuotaExceeded, await ledger.ReserveAsync(member, Quota10 with { MonthlyComparisons = 0 }, Guid.NewGuid(), nov.AddHours(2), default));
     }
 }
+
+[Collection("postgres")]
+public class AuditPipelineIntegrationTests(PostgresFixture pg)
+{
+    [IntegrationFact]
+    public async Task CollectedStoryIsAuditedThroughTheQueueAndStored()
+    {
+        await pg.ExecAsync("""DELETE FROM "FeedItems"; DELETE FROM "Stories";""");
+        var feed = new FeedItemStore(pg.Db);
+        var now = DateTimeOffset.UtcNow;
+        TriageResult ok = new(true, null, []);
+        await feed.SaveAsync(new FeedSource("fonte-a", "Fonte A", new Uri("https://a.example.org/f"), "tecnologia"),
+            [(new FeedEntry("Vazamento expõe dados de 2 milhões de clientes da Operadora Azul", "https://a.example.org/1", "A empresa confirmou o incidente.", now.AddHours(-2)), ok)], now, default);
+        await feed.SaveAsync(new FeedSource("fonte-b", "Fonte B", new Uri("https://b.example.org/f"), "tecnologia"),
+            [(new FeedEntry("Operadora Azul admite vazamento de dados de 200 mil clientes", "https://b.example.org/1", "Senhas não foram afetadas, segundo a empresa.", now.AddHours(-1)), ok)], now, default);
+        await new StoryStore(pg.Db).GroupAsync(now, default);
+        var storyId = await pg.ScalarAsync<Guid>("""SELECT "Id" FROM "Stories" WHERE "SourceCount" = 2""");
+
+        var handler = new AuditStageHandler(new PgStoryReader(pg.Db), new SimulatedAuditor(TimeProvider.System), new PgAuditStore(pg.Db));
+        var summary = await new StageRunner(new PgStoryQueue(pg.Db), handler, "w1", TimeProvider.System).RunOnceAsync(10, default);
+
+        Assert.Equal(1, summary.Completed);
+        Assert.Equal("auditada", await pg.ScalarAsync<string>("""SELECT "Status" FROM "Stories" WHERE "Id" = $1""", storyId));
+        var latest = await new PgAuditStore(pg.Db).LatestAsync(storyId, default);
+        Assert.NotNull(latest);
+        Assert.Contains(latest!.Value.Result.Claims, c => c.Status == RadarPlural.Pipeline.Comparison.ClaimStatus.Divergente);
+        Assert.Equal(2, latest.Value.Result.Sources.Count);
+    }
+}

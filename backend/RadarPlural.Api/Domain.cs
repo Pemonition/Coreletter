@@ -14,6 +14,7 @@ public sealed class AppDb(DbContextOptions<AppDb> options) : DbContext(options),
     public DbSet<FeedItem> FeedItems => Set<FeedItem>();
     public DbSet<Story> Stories => Set<Story>();
     public DbSet<UsageMonth> UsageMonths => Set<UsageMonth>();
+    public DbSet<StoryAudit> StoryAudits => Set<StoryAudit>();
     public DbSet<UsageReservation> UsageReservations => Set<UsageReservation>();
 
     protected override void OnModelCreating(ModelBuilder b)
@@ -70,6 +71,14 @@ public sealed class AppDb(DbContextOptions<AppDb> options) : DbContext(options),
             e.HasOne<Member>().WithMany().HasForeignKey(x => x.MemberId).OnDelete(DeleteBehavior.Cascade);
         });
         b.Entity<Member>().Property(x => x.PlanId).HasMaxLength(20).HasDefaultValue("free");
+        // Comparações (contrato v1) guardadas em jsonb, com a versão da história que foi comparada.
+        b.Entity<StoryAudit>(e =>
+        {
+            e.Property(x => x.Provider).HasMaxLength(40);
+            e.Property(x => x.Result).HasColumnType("jsonb");
+            e.HasIndex(x => new { x.StoryId, x.CreatedAt });
+            e.HasOne<Story>().WithMany().HasForeignKey(x => x.StoryId).OnDelete(DeleteBehavior.Cascade);
+        });
     }
 }
 public class Member
@@ -212,6 +221,16 @@ public class FeedItem
     public string? DiscardReason { get; set; }
     public string Flags { get; set; } = "";
     public Guid? StoryId { get; set; }
+}
+public class StoryAudit
+{
+    public Guid Id { get; set; }
+    public Guid StoryId { get; set; }
+    public int StoryVersion { get; set; }
+    public string Provider { get; set; } = "";
+    public bool Simulated { get; set; }
+    public string Result { get; set; } = "{}";
+    public DateTimeOffset CreatedAt { get; set; }
 }
 public class UsageMonth
 {

@@ -142,10 +142,18 @@ async Task<int> RunStageAsync(string name)
         Log($"ERRO etapa '{name}' não existe. Etapas: {string.Join(", ", Stages.All.Select(s => s.Name))}.");
         return 2;
     }
-    // Adaptadores de cada etapa entram aqui quando existirem (portas em RadarPlural.Pipeline/Ports.cs):
-    // auditoria = B05 (simulado) / B09 (Gemini); roteiro = #19; video = #20.
+    var connection = Environment.GetEnvironmentVariable("ConnectionStrings__Default");
+    if (string.IsNullOrWhiteSpace(connection) && stage.Name == "auditoria")
+    {
+        Log("ERRO defina ConnectionStrings__Default.");
+        return 2;
+    }
+    await using var db = NpgsqlDataSource.Create(DatabaseUrl.ToNpgsql(connection ?? "Host=localhost"));
+    // Adaptadores de cada etapa (portas em RadarPlural.Pipeline/Ports.cs).
+    // auditoria: simulado (B05). Gemini entra na B09 trocando o IAuditor. roteiro = #19; video = #20.
     IStageHandler? handler = stage.Name switch
     {
+        "auditoria" => new AuditStageHandler(new PgStoryReader(db), new SimulatedAuditor(TimeProvider.System), new PgAuditStore(db)),
         _ => null
     };
     if (handler is null)
@@ -153,21 +161,21 @@ async Task<int> RunStageAsync(string name)
         Log($"ERRO etapa '{stage.Name}' ainda sem adaptador configurado. Ver RadarPlural.Pipeline/Ports.cs e docs/decisoes/0004.");
         return 4;
     }
-    var connection = Environment.GetEnvironmentVariable("ConnectionStrings__Default");
-    if (string.IsNullOrWhiteSpace(connection))
+    var batch = 10;
+    if (ArgValue("--lote") is { } loteArg && (!int.TryParse(loteArg, out batch) || batch is < 1 or > 100))
     {
-        Log("ERRO defina ConnectionStrings__Default.");
+        Log($"ERRO --lote deve ser um número de 1 a 100 (recebido: '{loteArg}').");
         return 2;
     }
-    var batch = int.TryParse(ArgValue("--lote"), out var b) ? b : 10;
     var continuous = args.Contains("--continuo");
     // Nome único por réplica: no Kubernetes, HOSTNAME é o nome do pod.
     var workerId = $"{Environment.GetEnvironmentVariable("HOSTNAME") ?? Environment.MachineName}-{Environment.ProcessId}";
-    await using var db = NpgsqlDataSource.Create(DatabaseUrl.ToNpgsql(connection));
     var runner = new StageRunner(new PgStoryQueue(db), handler, workerId, TimeProvider.System);
 
     // SIGTERM (Kubernetes) ou Ctrl+C: termina a história atual e sai; o lease das não iniciadas expira e outra réplica retoma.
-    using var stop = new CancellationTokenSource();
+    // Sem "using": ProcessExit dispara DEPOIS que este método termina; com o objeto já descartado,
+    // Cancel() lançava ObjectDisposedException e o processo saía com erro mesmo tendo dado tudo certo.
+    var stop = new CancellationTokenSource();
     Console.CancelKeyPress += (_, e) => { e.Cancel = true; stop.Cancel(); };
     AppDomain.CurrentDomain.ProcessExit += (_, _) => stop.Cancel();
 

@@ -24,6 +24,12 @@ builder.Services.AddDbContext<AppDb>(o => o.UseNpgsql(npgsqlConnection));
 // Adaptadores da Infrastructure (arquitetura limpa: a API compõe, o domínio só conhece as portas).
 builder.Services.AddSingleton(_ => Npgsql.NpgsqlDataSource.Create(npgsqlConnection));
 builder.Services.AddSingleton<RadarPlural.Domain.Billing.IUsageLedger, RadarPlural.Infrastructure.PgUsageLedger>();
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<RadarPlural.Pipeline.IStoryReader, RadarPlural.Infrastructure.PgStoryReader>();
+builder.Services.AddSingleton<RadarPlural.Pipeline.IAuditStore, RadarPlural.Infrastructure.PgAuditStore>();
+// Auditor da comparação: simulado (B05). Trocar por Gemini (B09) é registrar outro IAuditor aqui.
+builder.Services.AddSingleton<RadarPlural.Pipeline.IAuditor, RadarPlural.Infrastructure.SimulatedAuditor>();
+builder.Services.AddSingleton<RadarPlural.Pipeline.Comparison.CompareStory>();
 
 // RN02 na inicialização: nenhum plano oferecido pode dar prejuízo no pior caso. Se der, a API não sobe.
 foreach (var plan in RadarPlural.Domain.Billing.PlanCatalog.All)
@@ -339,6 +345,34 @@ app.MapPut("/api/admin/members/{id:guid}/plan", async (Guid id, PlanInput input,
     return Results.NoContent();
 }).RequireAuthorization(p => p.RequireRole("admin"));
 
+// Comparação mais recente de uma história (contrato v1). Pública. "outdated" = a história mudou depois.
+app.MapGet("/api/stories/{id:guid}/comparison", async (Guid id, RadarPlural.Pipeline.IAuditStore audits, RadarPlural.Pipeline.IStoryReader stories, CancellationToken ct) =>
+{
+    var latest = await audits.LatestAsync(id, ct);
+    if (latest is null) return Results.NotFound(new { error = "Esta história ainda não foi comparada.", code = "ainda_nao_comparada" });
+    var story = await stories.ReadAsync(id, ct);
+    return Results.Ok(new { comparison = latest.Value.Result, outdated = story is not null && story.Version != latest.Value.StoryVersion });
+}).RequireRateLimiting("api");
+
+// Comparar agora (contrato v1 + RN01/RN03): cache de 24 h não gasta quota; Idempotency-Key evita cobrança dupla.
+app.MapPost("/api/comparisons", async (CompareInput input, HttpContext ctx, AppDb db, RadarPlural.Pipeline.Comparison.CompareStory compare, CancellationToken ct) =>
+{
+    if (input.StoryId is not { } storyId) return Results.BadRequest(new { error = "Informe storyId.", code = "entrada_invalida" });
+    var key = Guid.TryParse(ctx.Request.Headers["Idempotency-Key"], out var k) ? k : Guid.NewGuid();
+    var memberId = Id(ctx);
+    var member = await db.Members.AsNoTracking().SingleOrDefaultAsync(x => x.Id == memberId, ct);
+    if (member is null) return Results.Unauthorized();
+    var outcome = await compare.RunAsync(member.Id, RadarPlural.Domain.Billing.PlanCatalog.Find(member.PlanId), storyId, key, ct);
+    return outcome.ErrorCode switch
+    {
+        null => Results.Ok(new { comparison = outcome.Result, usage = new { units = outcome.Units, fromCache = outcome.FromCache } }),
+        "historia_inexistente" => Results.NotFound(new { error = "História não encontrada.", code = outcome.ErrorCode }),
+        "entrada_invalida" => Results.BadRequest(new { error = "A história precisa de 2 ou mais fontes para comparar.", code = outcome.ErrorCode }),
+        "quota_esgotada" => Results.Json(new { error = "Você usou todas as comparações do seu plano neste mês.", code = outcome.ErrorCode }, statusCode: 403),
+        _ => Results.Json(new { error = "O comparador está indisponível. Nada foi descontado da sua quota.", code = outcome.ErrorCode }, statusCode: 503)
+    };
+}).RequireAuthorization().RequireRateLimiting("api");
+
 app.MapGet("/api/moderation/reports", async (AppDb db) => Results.Ok(await db.Reports.AsNoTracking().OrderByDescending(x => x.CreatedAt).ThenByDescending(x => x.Id).Take(100).Select(x => new { x.Id, x.PostId, x.Reason, x.CreatedAt }).ToListAsync())).RequireAuthorization(p => p.RequireRole("admin"));
 
 app.MapPut("/api/moderation/posts/{id:guid}/hide", async (Guid id, AppDb db) =>
@@ -368,3 +402,4 @@ static Task SignIn(HttpContext ctx, Member user)
 }
 public partial class Program { }
 record PlanInput(string? PlanId);
+record CompareInput(Guid? StoryId);
