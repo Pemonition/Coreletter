@@ -1,0 +1,92 @@
+<section aria-labelledby="radar-title">
+  <div class="section-heading">
+    <div>
+      <h2 id="radar-title">Meu radar automático</h2>
+      <p>Escolha um assunto e receba descobertas das fontes selecionadas.</p>
+    </div>
+    <button class="secondary" (click)="refresh()" [disabled]="loading() || refreshing() || busy()">
+      {{refreshing() ? 'Atualizando…' : 'Atualizar resultados'}}
+    </button>
+  </div>
+  @if(error()) { <div class="message error" role="alert">{{error()}}</div> }
+  @if(notice()) { <div class="message success" role="status">{{notice()}}</div> }
+  @if(loading()) {
+    <div class="empty" role="status">Carregando seu radar…</div>
+  } @else {
+    <form class="radar-form" ngNativeValidate (ngSubmit)="save()">
+      <fieldset [disabled]="busy()">
+        <legend>O que você quer acompanhar?</legend>
+        <label>Assunto do radar
+          <input name="radarTopic" [(ngModel)]="topic" required maxlength="80" placeholder="Ex.: desenvolvimento .NET" />
+        </label>
+        <label>Palavras ou expressões de interesse
+          <input name="radarKeywords" [(ngModel)]="keywords" required maxlength="500" placeholder="Ex.: .NET, C#, ASP.NET" aria-describedby="keywords-help" />
+        </label>
+        <small id="keywords-help">Separe por vírgulas. Use até 10 palavras ou expressões de até 60 caracteres; pelo menos uma deve aparecer no conteúdo.</small>
+        <label>O que você prefere excluir? <span class="radar-optional">(opcional)</span>
+          <input name="radarExcluded" [(ngModel)]="excludedKeywords" maxlength="500" placeholder="Ex.: publicidade, vagas" />
+        </label>
+        <fieldset class="radar-sources">
+          <legend>Quais fontes deseja consultar? (até três)</legend>
+          @for(source of sources(); track source.id) {
+            <label class="radar-check">
+              <input type="checkbox" [name]="'source-' + source.id" [checked]="sourceIds.includes(source.id)"
+                [disabled]="sourceIds.length >= 3 && !sourceIds.includes(source.id)"
+                (change)="selectSource(source.id, $any($event.target).checked)" />
+              <span>{{source.name}} <small>{{source.language}}</small></span>
+            </label>
+          } @empty {
+            <p>Nenhuma fonte está disponível. Peça ao responsável pelo Coreletter para configurar as fontes RSS permitidas antes de ativar a coleta.</p>
+          }
+        </fieldset>
+        <div class="form-row">
+          <label>Com que frequência?
+            <select name="radarInterval" [(ngModel)]="intervalHours">
+              <option [ngValue]="6">A cada 6 horas</option>
+              <option [ngValue]="12">A cada 12 horas</option>
+              <option [ngValue]="24">A cada 24 horas</option>
+            </select>
+          </label>
+          <label>Limite de descobertas por coleta
+            <input type="number" name="radarMaxItems" [(ngModel)]="maxItems" min="1" max="20" required />
+          </label>
+        </div>
+        <p class="radar-help">Salvar ativa a coleta automática. O servidor precisa continuar em execução. Os resultados ficam no seu radar e não são publicados na comunidade nem enviados por e-mail.</p>
+        <div class="radar-actions">
+          <button class="primary" type="submit" [disabled]="busy() || !sources().length || !sourceIds.length">
+            {{busy() ? 'Salvando…' : 'Salvar e ativar coleta'}}
+          </button>
+          @if(profile()?.enabled) {
+            <button class="secondary" type="button" (click)="pause()" [disabled]="busy()">Pausar coleta</button>
+          }
+        </div>
+      </fieldset>
+    </form>
+    @if(profile(); as current) {
+      <section class="radar-status" aria-label="Estado da coleta" aria-live="polite">
+        <strong>{{current.enabled ? status(current.lastStatus) : 'Coleta pausada'}}</strong>
+        @if(current.lastRunAt) { <p>Última execução: {{current.lastRunAt | date:'dd/MM/yyyy HH:mm'}}</p> }
+        @if(current.enabled && current.nextRunAt) { <p>Próxima execução prevista: {{current.nextRunAt | date:'dd/MM/yyyy HH:mm'}}</p> }
+        @if(current.lastError) { <p class="inline-error">{{current.lastError}}</p> }
+      </section>
+    }
+    <div class="section-heading">
+      <div><h2>Suas descobertas</h2><p>Últimos 100 resultados, incluindo configurações anteriores. Consulte a fonte original antes de compartilhar.</p></div>
+      <button class="secondary" (click)="exportEvidence()" [disabled]="busy() || !items().length">Exportar fontes</button>
+    </div>
+    <div class="cards">
+      @for(item of items(); track item.id) {
+        <article class="card">
+          <div class="card-meta"><span class="badge">{{item.sourceName}}</span></div>
+          <a class="post-title" [href]="safeUrl(item.url)" target="_blank" rel="noopener noreferrer">{{item.title}} ↗</a>
+          <p class="comment">{{item.summary}}</p>
+          @if(item.publishedAt) { <small class="source">Publicado em {{item.publishedAt | date:'dd/MM/yyyy HH:mm'}}</small> }
+          <small class="source">Coletado em {{item.collectedAt | date:'dd/MM/yyyy HH:mm'}}</small>
+        </article>
+      } @empty {
+        <div class="empty"><h3>Seu radar ainda não tem descobertas.</h3><p>Após ativar a coleta, aguarde o processamento. Se a coleta concluir sem resultados, experimente outras palavras ou fontes.</p></div>
+      }
+    </div>
+    <p class="radar-help">A coleta usa os filtros que você definiu, sem análise por IA. “Exportar fontes” prepara um arquivo para você anexar a uma conversa e pedir uma análise; nenhum conteúdo é enviado automaticamente a uma IA.</p>
+  }
+</section>

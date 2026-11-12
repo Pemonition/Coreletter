@@ -11,4 +11,7 @@
 *.log
 TestResults/
 artifacts/
+.dotnet-home/
+*-log.txt
+frontend/.npm-cache/
 .vs/

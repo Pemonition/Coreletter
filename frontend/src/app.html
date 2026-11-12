@@ -1,3 +1,4 @@
+<a class="skip-link" href="#main-content">Pular para o conteúdo</a>
 <header class="topbar">
   <a class="brand" href="/" aria-label="Coreletter início"
     ><span class="brand-icon">◉</span> Core<span>letter</span></a
@@ -21,7 +22,9 @@
       <span>◫</span> Feed da comunidade</button
     ><button [class.active]="view==='saved'" (click)="select('saved')">
       <span>◇</span> Itens salvos</button
-    >@if(user()?.isAdmin){<button
+    >@if(user()){<button [class.active]="view==='radar'" (click)="select('radar')">
+      <span>◎</span> Meu radar automático</button>
+    }@if(user()?.isAdmin){<button
       [class.active]="view==='moderation'"
       (click)="select('moderation')"
     >
@@ -32,7 +35,7 @@
       <p>Descubra perspectivas. Compartilhe boas fontes.</p>
     </div>
   </aside>
-  <main>
+  <main id="main-content" tabindex="-1">
     <section class="hero">
       <div>
         <div class="eyebrow">UM RADAR. MUITAS PERSPECTIVAS.</div>
@@ -42,9 +45,7 @@
           você.
         </p>
       </div>
-      <div class="orbit" aria-hidden="true">
-        <span>✦</span><i>◉</i><b>↗</b>
-      </div>
+      <div class="discovery-3d" aria-hidden="true"><div class="spatial-scene"><div class="planet"><span>c.</span></div><div class="planet-ring ring-one"></div><div class="planet-ring ring-two"></div><div class="floating-note note-one">✦ Tecnologia</div><div class="floating-note note-two">◉ Novas perspectivas</div><div class="satellite"></div></div></div>
     </section>
     @if(error()){
     <div class="message error" role="alert">
@@ -57,6 +58,9 @@
       <button (click)="notice.set('')" aria-label="Fechar aviso">×</button>
     </div>
     }
+    @if(view==='radar') {
+      @if(user(); as u) { <app-collection-radar [memberId]="u.id" /> }
+    } @else {
     <div class="section-heading">
       <div>
         <h2>
@@ -173,6 +177,7 @@
       </button>
     </nav>
     }}
+    }
     <footer>
       Fontes externas expressam a visão de seus autores. Consulte o conteúdo
       original e compare perspectivas.<br /><span

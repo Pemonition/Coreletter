@@ -26,11 +26,23 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
-      - run: dotnet test backend/RadarPlural.slnx --configuration Release
+      - name: Testes unitarios e coleta com PostgreSQL descartavel
+        env:
+          CORELETTER_TEST_POSTGRES: Host=localhost;Port=5432;Database=coreletter_test_ci;Username=coreletter_ci;Password=disposable-ci-only-password
+          PGPASSWORD: disposable-ci-only-password
+        run: |
+          psql -h localhost -U coreletter_ci -d coreletter_ci -c 'CREATE DATABASE coreletter_test_ci'
+          dotnet test backend/RadarPlural.slnx --configuration Release
       - name: Iniciar API com PostgreSQL descartavel
         env:
           ASPNETCORE_ENVIRONMENT: Development
           ConnectionStrings__Default: Host=localhost;Port=5432;Database=coreletter_ci;Username=coreletter_ci;Password=disposable-ci-only-password
+          Collection__Enabled: 'false'
+          Collection__Sources__0__Id: fixture
+          Collection__Sources__0__Name: Fonte ficticia
+          Collection__Sources__0__Url: https://news.example.com/feed
+          Collection__Sources__0__Language: pt
+          Collection__Sources__0__Approved: 'true'
         run: |
           dotnet run --no-build --no-launch-profile --configuration Release --project backend/RadarPlural.Api > /tmp/coreletter-api.log 2>&1 &
           for attempt in $(seq 1 30); do
@@ -42,6 +54,9 @@ jobs:
       - name: Testar API e isolamento entre contas
         shell: pwsh
         run: ./scripts/Test-Api.ps1
+      - name: Testar questionario e autorizacao da coleta
+        shell: pwsh
+        run: ./scripts/Test-Collections.ps1
       - name: Diagnostico de falha da API
         if: failure()
         run: cat /tmp/coreletter-api.log || true
@@ -58,4 +73,5 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
+      - run: npm test
       - run: npm run build

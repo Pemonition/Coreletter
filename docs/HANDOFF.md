@@ -1,4 +1,32 @@
+## Frontend espacial — 12/11/2026
+
+Validação: 6 testes frontend aprovados, build produção aprovado (235,92 kB inicial), git diff --check aprovado. Inspeção visual no navegador ainda pendente; não equivale a teste de responsividade executado.
+
+Branch Pemonition: novo destaque visual com geometria CSS em perspectiva, esfera iluminada, anéis e cartões; refinamento de cards, foco visível, link para pular ao conteúdo e navegação móvel com quebra de linha. Sem modelo Blender, WebGL ou dependência nova. A animação é finita e não roda quando prefers-reduced-motion está ativo. As branches de histórias dos colegas não foram alteradas. Esta evolução visual aplica-se ao frontend preservado nesta branch; a conciliação com feat/tela-historias continua pendente.
+
+Evolução sugerida: Lindomar revisar layout real em celular/teclado e integrar ao frontend de histórias; Hugo definir modelo artístico; exportar GLB do Blender e só então avaliar carregamento sob demanda, fallback estático, peso e suporte a WebGL antes de incorporar. Nenhum modelo Blender foi criado nesta sessão.
+
+Vídeo demonstrativo renderizado em 12/11/2026: 26s Full HD sem áudio, em video/output-final/coreletter.mp4. PR rascunho #31 publicada com comentário para revisão dos colegas; main e branches remotas existentes preservadas.
+
+## Continuidade — 12/11/2026, branch Pemonition
+
+Alterações locais de questionário/coleta preservadas em dee2258. Validação desta sessão: 55 testes backend aprovados, 3 de PostgreSQL pulados; 6 frontend aprovados e build desenvolvimento aprovado. Não confundir com validação PostgreSQL histórica abaixo.
+
+Nova integração local demonstrativa HyperFrames em video/ e docs/HYPERFRAMES.md. Sugestões e comentário para colegas em docs/REVISAO-EQUIPE-PEMONITION.md. Branches remotas avançadas foram lidas e preservadas; não foram integradas porque mudam contratos/migrações em comum. Claude Code deve retomar conferindo Git e esta documentação; não há transferência de login entre ferramentas.
+
 # Estado da base automatizada
+
+## Incremento local — 27/10/2026: questionário e coleta
+
+Prevalece sobre os trechos históricos abaixo quanto à coleta: implementados questionário autenticado, preferências PostgreSQL, worker periódico, fontes RSS/Atom controladas, filtros, resultados privados, pausa, deduplicação e exportação JSON para análise manual. Sem integração real de IA, envios de newsletter, cobrança ou coleta real habilitada. Catálogo inicial vazio e `Collection:Enabled=false`.
+
+Política e ativação: `docs/decisoes/0001-coleta-por-questionario.md`. Contrato em `backend/API.md`. Não há fetch de URLs arbitrárias do cliente. Histórico preservado. Novo esquema aditivo aplicado apenas ao PostgreSQL descartável nesta validação; nenhum banco do curso foi alterado.
+
+Validação executada: 58 testes backend aprovados, incluindo três com PostgreSQL 17 real descartável; 6 testes frontend aprovados e builds Angular desenvolvimento/produção aprovados. `scripts/Test-Collections.ps1` aprovado por HTTP na API local com contas fictícias: 401, conta nova, salvar/alterar questionário pausado, isolamento, bloqueio de URL fora do catálogo, coleta global desligada, export e logout. Dois especialistas auxiliaram implementação frontend e revisão estática. CI foi atualizada para executar estes testes, mas ainda não foi disparada remotamente.
+
+Limites: testes de rede usaram respostas HTTP controladas; não houve coleta de uma fonte pública nem inspeção visual no navegador. A transação do worker mantém lock durante até três downloads limitados e não é uma fila de grande escala. Para demonstrar coleta real, o responsável precisa configurar e habilitar uma fonte permitida, iniciar API/banco, preencher o questionário e ativar o radar. Material acadêmico ainda requer entendimento e revisão da equipe antes do merge.
+
+Esta implementação foi preparada inicialmente em cópia de trabalho isolada do Life Project, preservando o original durante testes. Não publicada no GitHub. Prospeção comercial fica para depois do projeto do curso, conforme Hugo.
 
 Data: 26/10/2026. Produto Coreletter; namespaces .NET e nome técnico npm ainda RadarPlural para preservar os contratos iniciais. Isso não representa uma segunda aplicação.
 
