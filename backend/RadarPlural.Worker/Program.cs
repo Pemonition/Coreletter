@@ -161,14 +161,21 @@ async Task<int> RunStageAsync(string name)
         Log($"ERRO etapa '{stage.Name}' ainda sem adaptador configurado. Ver RadarPlural.Pipeline/Ports.cs e docs/decisoes/0004.");
         return 4;
     }
-    var batch = int.TryParse(ArgValue("--lote"), out var b) ? b : 10;
+    var batch = 10;
+    if (ArgValue("--lote") is { } loteArg && (!int.TryParse(loteArg, out batch) || batch is < 1 or > 100))
+    {
+        Log($"ERRO --lote deve ser um número de 1 a 100 (recebido: '{loteArg}').");
+        return 2;
+    }
     var continuous = args.Contains("--continuo");
     // Nome único por réplica: no Kubernetes, HOSTNAME é o nome do pod.
     var workerId = $"{Environment.GetEnvironmentVariable("HOSTNAME") ?? Environment.MachineName}-{Environment.ProcessId}";
     var runner = new StageRunner(new PgStoryQueue(db), handler, workerId, TimeProvider.System);
 
     // SIGTERM (Kubernetes) ou Ctrl+C: termina a história atual e sai; o lease das não iniciadas expira e outra réplica retoma.
-    using var stop = new CancellationTokenSource();
+    // Sem "using": ProcessExit dispara DEPOIS que este método termina; com o objeto já descartado,
+    // Cancel() lançava ObjectDisposedException e o processo saía com erro mesmo tendo dado tudo certo.
+    var stop = new CancellationTokenSource();
     Console.CancelKeyPress += (_, e) => { e.Cancel = true; stop.Cancel(); };
     AppDomain.CurrentDomain.ProcessExit += (_, _) => stop.Cancel();
 
