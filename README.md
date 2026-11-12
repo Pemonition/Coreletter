@@ -76,3 +76,7 @@ AGENTS.md é a fonte compartilhada de regras. CLAUDE.md aponta para ela. Leia do
 ## Limites acadêmicos e de segurança
 
 Use contas e conteúdo de demonstração fictícios, links permitidos e sem segredos. Origem e título fornecido pelo usuário devem ser identificáveis. Comparação futura deve citar evidências e admitir insuficiência, sem prometer verdade certificada. Quotas financeiras precisam de persistência e transação antes de chamadas de IA com custo real.
+
+## Vídeo demonstrativo e revisão da equipe
+
+Composição local para HyperFrames: [execução e limites](docs/HYPERFRAMES.md). [Bases, sugestões completas e comentário aos responsáveis](docs/REVISAO-EQUIPE-PEMONITION.md). As branches avançadas dos colegas permanecem separadas para revisão de contratos.

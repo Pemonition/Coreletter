@@ -26,4 +26,3 @@ Todos os endpoints `/api/collections/*` exigem autenticação e rate limit da AP
 - `GET /api/collections/export`: JSON de evidências com limites; não chama IA nem envia mensagem.
 
 Status: `pending`, `paused`, `success`, `partial`, `failed`. `success` com lista vazia significa coleta válida sem correspondências; falha nunca equivale a ausência de novidades. Execução depende da API e banco ativos. Ver `docs/decisoes/0001-coleta-por-questionario.md` para fonte permitida, rede e esquema aditivo.
-

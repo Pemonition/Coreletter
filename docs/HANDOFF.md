@@ -1,3 +1,9 @@
+## Continuidade — 12/11/2026, branch Pemonition
+
+Alterações locais de questionário/coleta preservadas em dee2258. Validação desta sessão: 55 testes backend aprovados, 3 de PostgreSQL pulados; 6 frontend aprovados e build desenvolvimento aprovado. Não confundir com validação PostgreSQL histórica abaixo.
+
+Nova integração local demonstrativa HyperFrames em video/ e docs/HYPERFRAMES.md. Sugestões e comentário para colegas em docs/REVISAO-EQUIPE-PEMONITION.md. Branches remotas avançadas foram lidas e preservadas; não foram integradas porque mudam contratos/migrações em comum. Claude Code deve retomar conferindo Git e esta documentação; não há transferência de login entre ferramentas.
+
 # Estado da base automatizada
 
 ## Incremento local — 27/10/2026: questionário e coleta
