@@ -64,6 +64,12 @@ Projeto novo `RadarPlural.Domain` (Billing: RN01 quota, RN02 margem mínima, RN0
 
 TDD: regras RED 26 → GREEN; reserva RED 4 → GREEN; total 218 testes, 3/3 execuções. Mutação: sem `WHERE used < quota` o teste de 50 pedidos simultâneos falha. Feita por Hugo como base para o Davidy (B07) melhorar; o `UsageBudget` em memória antigo continua no código até a B05 trocar pelo ledger.
 
+## Comparador simulado, versão básica (12/11/2026, branch feat/comparador-simulado, sobre feat/rentabilidade)
+
+`ContractValidator` (contrato v1), `SimulatedAuditor`, `AuditStageHandler` (Worker `--etapa auditoria` agora funciona), `CompareStory` (cache 24 h + RN03 + devolução), `PgStoryReader`/`PgAuditStore`, migração `Comparacoes` (`StoryAudits` jsonb). API: `GET /api/stories/{id}/comparison`, `POST /api/comparisons`.
+
+TDD: validador/auditor/etapa RED 19 → GREEN; caso de uso RED 8 → GREEN; teste de integração ponta a ponta escrito depois dos adaptadores. Total 247. Validado com feeds reais: 10 histórias corroboradas auditadas pela fila; usuário Grátis: 3 cobradas, 4ª 403, cache e idempotência sem cobrança dupla.
+
 ## Próxima sessão
 
 1. Aceitar convites, conferir CI e executar B01 com PostgreSQL na máquina dos integrantes.

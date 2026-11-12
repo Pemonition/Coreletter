@@ -7,6 +7,9 @@
 | Arquivo | Adaptador |
 |---|---|
 | `PgStoryQueue.cs` | Fila de etapas na tabela `Stories`: `FOR UPDATE SKIP LOCKED`, lease e versão (várias réplicas sem duplicar trabalho) |
+| `PgUsageLedger.cs` | RN03: reserva de quota atômica, idempotente |
+| `PgAuditStore.cs` | `PgStoryReader` (história + notícias) e `PgAuditStore` (comparações em jsonb, com versão) |
+| `SimulatedAuditor.cs` | Auditor simulado (B05): concordância, divergência numérica e única fonte, sem IA |
 | `FeedItemStore.cs` | `FeedItemStore` (grava notícias, `ON CONFLICT DO NOTHING`) e `StoryStore` (retriagem e agrupamento numa transação) |
 
 O esquema é da API (migrações em `RadarPlural.Api/Migrations`); este projeto só lê e escreve.

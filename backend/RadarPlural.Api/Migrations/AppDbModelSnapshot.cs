@@ -303,6 +303,40 @@ namespace RadarPlural.Api.Migrations
                     b.ToTable("Stories");
                 });
 
+            modelBuilder.Entity("RadarPlural.Api.StoryAudit", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<string>("Result")
+                        .IsRequired()
+                        .HasColumnType("jsonb");
+
+                    b.Property<bool>("Simulated")
+                        .HasColumnType("boolean");
+
+                    b.Property<Guid>("StoryId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("StoryVersion")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StoryId", "CreatedAt");
+
+                    b.ToTable("StoryAudits");
+                });
+
             modelBuilder.Entity("RadarPlural.Api.UsageMonth", b =>
                 {
                     b.Property<Guid>("MemberId")
@@ -374,6 +408,15 @@ namespace RadarPlural.Api.Migrations
                     b.HasOne("RadarPlural.Api.Post", null)
                         .WithMany()
                         .HasForeignKey("PostId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("RadarPlural.Api.StoryAudit", b =>
+                {
+                    b.HasOne("RadarPlural.Api.Story", null)
+                        .WithMany()
+                        .HasForeignKey("StoryId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

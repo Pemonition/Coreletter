@@ -8,7 +8,10 @@
 |---|---|
 | `Stages.cs` | Estados da história, definição das etapas (auditoria, roteiro, vídeo), portas `IStoryQueue` e `IStageHandler` |
 | `StageRunner.cs` | Executa um lote de uma etapa; `RetryPolicy` (1, 2, 4… min até 1 h) |
-| `Ports.cs` | Portas das próximas etapas: `IStoryReader`, `IAuditor`, `IAuditStore` |
+| `Ports.cs` | Portas: `IStoryReader`, `IAuditor`, `IAuditStore` |
+| `AuditStage.cs` | Etapa de auditoria (lê, chama o auditor, valida pelo contrato, grava) |
+| `Comparison/Contract.cs` | Tipos do contrato v1 e `ContractValidator` (citação literal, sem veredito, ids conhecidos) |
+| `Comparison/CompareStory.cs` | Caso de uso "comparar agora": cache 24 h, reserva de quota (RN03), devolução se o provedor falhar |
 
 ## Como adicionar uma etapa (ex.: auditor simulado da B05)
 1. Implemente `IAuditor` num adaptador (simulado: respostas de `docs/contratos/exemplos/`).

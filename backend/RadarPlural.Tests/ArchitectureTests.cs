@@ -13,9 +13,18 @@ public class ArchitectureTests
         marker.Assembly.GetReferencedAssemblies().Select(a => a.Name!).ToList();
 
     [Fact]
-    public void ApplicationLayerDependsOnNothingOfOurs()
+    public void ApplicationLayerDependsOnlyOnTheDomain()
     {
+        // Aplicação → Domínio é a direção certa (camada de fora conhece a de dentro). O resto é proibido.
         var refs = References(typeof(RadarPlural.Pipeline.StageRunner));
+        Assert.DoesNotContain(refs, r => r.StartsWith("RadarPlural.") && r != "RadarPlural.Domain");
+        Assert.DoesNotContain(refs, r => Frameworks.Any(f => r.StartsWith(f)));
+    }
+
+    [Fact]
+    public void BusinessDomainDependsOnNothing()
+    {
+        var refs = References(typeof(RadarPlural.Domain.Billing.Profitability));
         Assert.DoesNotContain(refs, r => r.StartsWith("RadarPlural."));
         Assert.DoesNotContain(refs, r => Frameworks.Any(f => r.StartsWith(f)));
     }

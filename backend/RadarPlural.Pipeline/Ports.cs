@@ -13,17 +13,17 @@ public interface IStoryReader
     Task<StorySnapshot?> ReadAsync(Guid storyId, CancellationToken ct);
 }
 
-// Resultado no formato do contrato docs/contratos/comparacao-v1.md. Json é a resposta já validada.
-// B05 pode trocar Json por um modelo tipado sem mexer no executor.
-public sealed record AuditOutcome(string ContractVersion, string Json, bool Simulated);
-
+// Auditor: compara as notícias de uma história e devolve o contrato v1. Adaptadores: simulado (B05), Gemini (B09).
+// A saída de QUALQUER auditor passa por ContractValidator.Sanitize antes de ser gravada ou mostrada.
 public interface IAuditor
 {
     string Name { get; }
-    Task<AuditOutcome> AuditAsync(StorySnapshot story, CancellationToken ct);
+    bool Simulated { get; }
+    Task<Comparison.ComparisonResult> AuditAsync(StorySnapshot story, CancellationToken ct);
 }
 
 public interface IAuditStore
 {
-    Task SaveAsync(Guid storyId, int version, string auditorName, AuditOutcome outcome, CancellationToken ct);
+    Task SaveAsync(Comparison.ComparisonResult result, int storyVersion, CancellationToken ct);
+    Task<(Comparison.ComparisonResult Result, int StoryVersion)?> LatestAsync(Guid storyId, CancellationToken ct);
 }
