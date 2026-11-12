@@ -42,6 +42,14 @@ TDD registrado: RED com 62 falhas esperadas (`NotImplementedException`) e 24 apr
 
 Validado localmente com PostgreSQL 16 real e rede: API aplicou as migrações; coletor leu 7 fontes, gravou 200 itens; segunda execução gravou 0 (deduplicação); `/api/news` com filtros por tema e fonte e erro 400 para página inválida; resumos até 299 caracteres. g1 e Folha retornaram 403 ao robô identificado e foram retirados da lista. Ainda não executados: o workflow `ingestao.yml` no GitHub (só dispara da `main`; testar por *Run workflow*) e a gravação no banco do Render (depende do secret).
 
+## Triagem e agrupamento (12/11/2026, branch feat/triagem-agrupamento, sobre feat/deploy-render)
+
+Decisão 0003 (PR de documentação separada). `Triage` e `StoryClusterer`/`StoryReconciler` em `RadarPlural.Ingestion`; `StoryStore` no Worker; migração `TriagemHistorias` (status/motivo/marcas em `FeedItems`, tabela `Stories`); `GET /api/stories`; `/api/news` só com notícias aprovadas.
+
+TDD: RED 33 falhas esperadas → GREEN 134. Segunda rodada com dados reais revelou 3 erros de agrupamento (encadeamento via "CEO", "GTA 6 + Xbox" juntando eventos diferentes, maiúscula após "?" tratada como nome) e guias de compra/resumo do dia passando: viraram 10 testes RED → GREEN 143. Regra "2 nomes próprios" removida por causa disso.
+
+Validado com PostgreSQL 16 e feeds reais: ~200 notícias por coleta, ~50 descartadas (42 por caminho de afiliado), ~130 histórias, 12 com 2+ fontes. Reexecução mantém ids; divisão de história errada manteve o id na parte maior; zero histórias órfãs; contagens conferidas por SQL. Limitações: regra por palavras não entende sinônimos ("renuncia" × "deixa") e depende de nome próprio; mesma história com manchetes muito diferentes pode ficar separada (ex.: "Epic Games" × "Jogos grátis na Epic Games"); manchetes TODAS EM MAIÚSCULAS contam todas as palavras como nome.
+
 ## Próxima sessão
 
 1. Aceitar convites, conferir CI e executar B01 com PostgreSQL na máquina dos integrantes.

@@ -12,6 +12,7 @@ public sealed class AppDb(DbContextOptions<AppDb> options) : DbContext(options),
     public DbSet<SavedPost> Saved => Set<SavedPost>();
     public DbSet<Report> Reports => Set<Report>();
     public DbSet<FeedItem> FeedItems => Set<FeedItem>();
+    public DbSet<Story> Stories => Set<Story>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -31,6 +32,20 @@ public sealed class AppDb(DbContextOptions<AppDb> options) : DbContext(options),
             e.Property(x => x.Url).HasMaxLength(2048);
             e.Property(x => x.Title).HasMaxLength(300);
             e.Property(x => x.Summary).HasMaxLength(1000);
+            // Triagem (decisoes/0003): "triado" segue no pipeline; "descartado" guarda o motivo e sai do feed.
+            e.Property(x => x.Status).HasMaxLength(20).HasDefaultValue("triado");
+            e.Property(x => x.DiscardReason).HasMaxLength(40);
+            e.Property(x => x.Flags).HasMaxLength(200).HasDefaultValue("");
+            e.HasIndex(x => new { x.Status, x.CollectedAt });
+            e.HasOne<Story>().WithMany().HasForeignKey(x => x.StoryId).OnDelete(DeleteBehavior.SetNull);
+        });
+        // História = notícias de veículos diferentes sobre o mesmo acontecimento. Estatísticas recalculadas pelo Worker.
+        b.Entity<Story>(e =>
+        {
+            e.Property(x => x.Title).HasMaxLength(300);
+            e.Property(x => x.Topic).HasMaxLength(60);
+            e.Property(x => x.Status).HasMaxLength(20).HasDefaultValue("agrupada");
+            e.HasIndex(x => x.LastPublishedAt);
         });
     }
 }
@@ -168,6 +183,22 @@ public class FeedItem
     public string Summary { get; set; } = "";
     public DateTimeOffset? PublishedAt { get; set; }
     public DateTimeOffset CollectedAt { get; set; } = DateTimeOffset.UtcNow;
+    public string Status { get; set; } = "triado";
+    public string? DiscardReason { get; set; }
+    public string Flags { get; set; } = "";
+    public Guid? StoryId { get; set; }
+}
+public class Story
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public string Title { get; set; } = "";
+    public string Topic { get; set; } = "";
+    public string Status { get; set; } = "agrupada";
+    public int ItemCount { get; set; }
+    public int SourceCount { get; set; }
+    public DateTimeOffset FirstPublishedAt { get; set; }
+    public DateTimeOffset LastPublishedAt { get; set; }
+    public DateTimeOffset UpdatedAt { get; set; } = DateTimeOffset.UtcNow;
 }
 public record RegisterInput(string Email, string Password, string DisplayName);
 

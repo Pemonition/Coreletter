@@ -162,7 +162,7 @@ app.MapGet("/api/news", async (AppDb db, int page = 1, int pageSize = 20, string
 {
     if (page < 1 || page > 1000000) return Error("Página deve estar entre 1 e 1000000.");
     pageSize = Math.Clamp(pageSize, 1, 50);
-    var q = db.FeedItems.AsNoTracking();
+    var q = db.FeedItems.AsNoTracking().Where(x => x.Status == "triado");
     if (!string.IsNullOrWhiteSpace(topic)) q = q.Where(x => x.Topic == topic.Trim().ToLower());
     if (!string.IsNullOrWhiteSpace(source)) q = q.Where(x => x.SourceId == source.Trim());
     var total = await q.CountAsync();
@@ -171,6 +171,33 @@ app.MapGet("/api/news", async (AppDb db, int page = 1, int pageSize = 20, string
         .Select(x => new { x.Id, x.SourceId, x.SourceName, x.Topic, x.Url, x.Title, x.Summary, x.PublishedAt, x.CollectedAt })
         .ToListAsync();
     return Results.Ok(new { items, page, pageSize, total });
+}).RequireRateLimiting("api");
+
+// Histórias: a mesma notícia em veículos diferentes (agrupamento do Worker). minSources=2 mostra só as corroboradas.
+app.MapGet("/api/stories", async (AppDb db, int page = 1, int pageSize = 20, string? topic = null, int minSources = 1) =>
+{
+    if (page < 1 || page > 1000000) return Error("Página deve estar entre 1 e 1000000.");
+    pageSize = Math.Clamp(pageSize, 1, 50);
+    minSources = Math.Clamp(minSources, 1, 50);
+    var q = db.Stories.AsNoTracking().Where(x => x.SourceCount >= minSources);
+    if (!string.IsNullOrWhiteSpace(topic)) q = q.Where(x => x.Topic == topic.Trim().ToLower());
+    var total = await q.CountAsync();
+    var stories = await q.OrderByDescending(x => x.LastPublishedAt).ThenByDescending(x => x.Id)
+        .Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+    var ids = stories.Select(x => x.Id).ToList();
+    var items = await db.FeedItems.AsNoTracking().Where(x => x.StoryId != null && ids.Contains(x.StoryId.Value) && x.Status == "triado")
+        .OrderBy(x => x.PublishedAt ?? x.CollectedAt)
+        .Select(x => new { x.Id, StoryId = x.StoryId!.Value, x.SourceId, x.SourceName, x.Url, x.Title, x.PublishedAt })
+        .ToListAsync();
+    return Results.Ok(new
+    {
+        items = stories.Select(s => new
+        {
+            s.Id, s.Title, s.Topic, s.Status, s.SourceCount, s.ItemCount, s.FirstPublishedAt, s.LastPublishedAt,
+            items = items.Where(i => i.StoryId == s.Id).Select(i => new { i.Id, i.SourceId, i.SourceName, i.Url, i.Title, i.PublishedAt })
+        }),
+        page, pageSize, total
+    });
 }).RequireRateLimiting("api");
 
 app.MapGet("/api/posts/saved", async (HttpContext ctx, AppDb db) =>

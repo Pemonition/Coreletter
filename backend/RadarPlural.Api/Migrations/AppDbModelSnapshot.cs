@@ -50,6 +50,17 @@ namespace RadarPlural.Api.Migrations
                     b.Property<DateTimeOffset>("CollectedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("DiscardReason")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)");
+
+                    b.Property<string>("Flags")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasDefaultValue("");
+
                     b.Property<DateTimeOffset?>("PublishedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -62,6 +73,16 @@ namespace RadarPlural.Api.Migrations
                         .IsRequired()
                         .HasMaxLength(120)
                         .HasColumnType("character varying(120)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("triado");
+
+                    b.Property<Guid?>("StoryId")
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Summary")
                         .IsRequired()
@@ -87,8 +108,12 @@ namespace RadarPlural.Api.Migrations
 
                     b.HasIndex("SourceId");
 
+                    b.HasIndex("StoryId");
+
                     b.HasIndex("Url")
                         .IsUnique();
+
+                    b.HasIndex("Status", "CollectedAt");
 
                     b.ToTable("FeedItems");
                 });
@@ -205,6 +230,59 @@ namespace RadarPlural.Api.Migrations
                     b.HasIndex("PostId");
 
                     b.ToTable("Saved");
+                });
+
+            modelBuilder.Entity("RadarPlural.Api.Story", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("FirstPublishedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("ItemCount")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("LastPublishedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("SourceCount")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("agrupada");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<string>("Topic")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LastPublishedAt");
+
+                    b.ToTable("Stories");
+                });
+
+            modelBuilder.Entity("RadarPlural.Api.FeedItem", b =>
+                {
+                    b.HasOne("RadarPlural.Api.Story", null)
+                        .WithMany()
+                        .HasForeignKey("StoryId")
+                        .OnDelete(DeleteBehavior.SetNull);
                 });
 
             modelBuilder.Entity("RadarPlural.Api.Report", b =>
