@@ -33,18 +33,23 @@ roteiros/<id>.json  ──►  gerador/gerar.mjs  ──►  composicoes/<id>/in
   - `roteiroDeComparacao` cria um roteiro básico a partir de uma comparação da API (contrato v1).
 - **`gerador/gerar.mjs`:** linha de comando, sem dependências (só Node 22+).
 - **`composicoes/`:** saída gerada. **Não edite à mão:** edite o roteiro e gere de novo. Um teste na CI confere que a composição commitada bate com o roteiro.
-- **`marca/fontes/`:** DM Sans (licença OFL, arquivo junto). O HyperFrames exige a fonte dentro do projeto (`@font-face` local).
+- **`marca/`:** DM Sans (licença OFL, arquivo junto) e GSAP. O HyperFrames exige fonte e scripts dentro do projeto: nada vem da internet na hora do render.
 
 ## Passo a passo no Windows (PowerShell)
 
-Pré-requisitos: Node 22+ e FFmpeg no PATH (`ffmpeg -version`).
+Pré-requisitos: Node 22+ e o HyperFrames desktop instalado (ele traz o FFmpeg). Versões fixadas em `video/package.json` e no lockfile: **HyperFrames 0.9.40** e **GSAP 3.14.2**. É a combinação já validada no PC do Hugo (PR #31).
 
-1. Na raiz do repositório, gere a composição: `node video/gerador/gerar.mjs video/roteiros/como-funciona.json`
-2. Entre na pasta: `cd video/composicoes/como-funciona`
-3. Confira as regras: `npx hyperframes check`. A meta é **0 apontamentos**.
-4. Veja no navegador: `npx hyperframes preview`
-5. Renderize: `npx hyperframes render`. Para as opções (pasta de saída, qualidade), use `npx hyperframes render --help`.
-6. Coloque o MP4 no Drive da equipe. **Não commite MP4 no Git**: arquivo grande e regenerável.
+1. Entre na pasta: `cd video`
+2. Instale as versões fixadas: `npm ci --ignore-scripts`
+3. Gere a composição: `npm run gerar`. Ou `node gerador/gerar.mjs roteiros/<id>.json` para outro roteiro.
+4. Confira as regras: `npm run check`. A meta é **0 erros**. Avisos de "separar em subcomposições" são sugestão de organização, não erro.
+5. Veja no navegador: `npm run preview`
+6. Renderize: `pwsh -File Render-Local.ps1`. O script usa o FFmpeg do app, roda `check` antes e grava `renders/como-funciona.mp4`.
+7. Coloque o MP4 no Drive da equipe. **Não commite MP4 no Git**: arquivo grande e regenerável (`renders/` está no `.gitignore`).
+
+**Editou no HyperFrames Studio?** O gerador percebe (assinatura no fim do `index.html`) e **não sobrescreve** a sua edição. Leve a mudança para o roteiro ou para o gerador e gere de novo com `--forcar`.
+
+**Por que o GSAP é arquivo local e não CDN:** com o CDN, o `hyperframes check` não encontra a timeline. Isso foi verificado na PR #31. O arquivo fica em `marca/gsap.min.js`, e um teste confere que a versão bate com o lockfile.
 
 ## Escrever um roteiro
 

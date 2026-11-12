@@ -2,7 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { composicao, escapar, roteiroDeComparacao, tempos, validarRoteiro } from "./lib.mjs";
+import { composicao, escapar, foiEditada, roteiroDeComparacao, tempos, validarRoteiro } from "./lib.mjs";
 
 const base = () => ({
   versao: 1,
@@ -116,4 +116,21 @@ test("roteiro a partir de uma comparação (contrato v1) usa os nomes dos veícu
   assert.deepEqual(comp.afirmacoes[0].fontes, ["Tecnoblog", "TecMundo"]);
   assert.deepEqual(comp.afirmacoes[1].fontes, ["Tecnoblog"]);
   assert.match(r.cenas.at(-1).texto, /simulada/);
+});
+
+test("GSAP vem de arquivo local (com CDN o hyperframes check não acha a timeline)", async () => {
+  const html = composicao(base());
+  assert.match(html, /<script src="assets\/gsap\.min\.js"><\/script>/);
+  assert.doesNotMatch(html, /https?:\/\//);
+  const gsap = await readFile(new URL("../composicoes/como-funciona/assets/gsap.min.js", import.meta.url), "utf8");
+  assert.match(gsap, /GSAP 3\.14\.2/);
+  const lock = JSON.parse(await readFile(new URL("../package-lock.json", import.meta.url), "utf8"));
+  assert.equal(lock.packages["node_modules/gsap"].version, "3.14.2", "marca/gsap.min.js e package-lock devem ter a mesma versão");
+});
+
+test("detecta composição editada à mão (não sobrescreve o trabalho do Studio)", () => {
+  const html = composicao(base());
+  assert.equal(foiEditada(html), false);
+  assert.equal(foiEditada(html.replace("Olá", "Oi")), true);
+  assert.equal(foiEditada("<html>sem assinatura</html>"), true);
 });

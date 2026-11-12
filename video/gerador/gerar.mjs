@@ -2,11 +2,12 @@
 // Uso (na raiz do repositório):
 //   node video/gerador/gerar.mjs video/roteiros/como-funciona.json
 //   node video/gerador/gerar.mjs --de-comparacao comparacao.json [--id minha-historia]
+//   --forcar   sobrescreve mesmo se a composição foi editada à mão (no HyperFrames Studio, por exemplo)
 // Saída: video/composicoes/<id>/index.html + fontes/. Depois: ver video/README.md (preview e render).
 import { readFile, writeFile, mkdir, copyFile, readdir } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { composicao, roteiroDeComparacao, validarRoteiro } from "./lib.mjs";
+import { composicao, foiEditada, roteiroDeComparacao, validarRoteiro } from "./lib.mjs";
 
 const aqui = dirname(fileURLToPath(import.meta.url));
 const raizVideo = resolve(aqui, "..");
@@ -36,9 +37,19 @@ async function main() {
     return 1;
   }
   const saida = join(raizVideo, "composicoes", roteiro.id);
+  const indice = join(saida, "index.html");
+  const atual = await readFile(indice, "utf8").catch(() => null);
+  if (atual !== null && foiEditada(atual) && !args.includes("--forcar")) {
+    console.error(`${indice} foi editado à mão depois de gerado. Para não perder a edição, nada foi sobrescrito.`);
+    console.error("Leve a mudança para o roteiro (ou para o gerador) e rode de novo com --forcar.");
+    return 3;
+  }
   await mkdir(join(saida, "fontes"), { recursive: true });
-  await writeFile(join(saida, "index.html"), composicao(roteiro));
+  await mkdir(join(saida, "assets"), { recursive: true });
+  await writeFile(indice, composicao(roteiro));
   for (const f of await readdir(join(raizVideo, "marca", "fontes"))) await copyFile(join(raizVideo, "marca", "fontes", f), join(saida, "fontes", f));
+  // GSAP local: com o CDN, o "hyperframes check" não encontra a timeline (verificado na PR #31, HyperFrames 0.9.40).
+  await copyFile(join(raizVideo, "marca", "gsap.min.js"), join(saida, "assets", "gsap.min.js"));
   const total = roteiro.cenas.reduce((s, c) => s + c.duracao, 0);
   console.log(`composição: ${join(saida, "index.html")} (${roteiro.cenas.length} cenas, ${total} s)`);
   return 0;

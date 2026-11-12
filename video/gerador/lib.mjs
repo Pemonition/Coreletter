@@ -7,6 +7,8 @@
 //     sem escapar, um título com "<script>" viraria código dentro do vídeo.
 //  3. O pipeline (auditor → roteirista → vídeo, docs/decisoes/0003) precisa gerar vídeo sem humano no meio.
 
+import { createHash } from "node:crypto";
+
 export const VERSAO_ROTEIRO = 1;
 export const STATUS = ["concordante", "divergente", "unica_fonte", "evidencia_insuficiente"];
 export const ROTULO_STATUS = {
@@ -197,7 +199,7 @@ export function composicao(roteiro) {
     .map(([s, [bg, fg]]) => `    .chip.${s} { background: ${bg}; color: ${fg}; }\n    .afirmacao.${s} { border-left-color: ${fg}; }`)
     .join("\n");
   const escala = vertical ? 1.1 : 1;
-  return `<!doctype html>
+  const html = `<!doctype html>
 <!-- GERADO por video/gerador/gerar.mjs a partir de video/roteiros/${id}.json. Não edite aqui: edite o roteiro e gere de novo. -->
 <html lang="pt-BR">
 <head>
@@ -240,7 +242,7 @@ ${chips}
 ${cenas}
     <div class="rodape"><div class="barra-progresso"></div></div>
   </div>
-  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <script src="assets/gsap.min.js"></script>
   <script>
     (function () {
       const tl = gsap.timeline({ paused: true });
@@ -253,4 +255,16 @@ ${anima}
 </body>
 </html>
 `;
+  return `${html}<!-- assinatura:${assinatura(html)} -->\n`;
+}
+
+// Proteção contra perder edição feita no HyperFrames Studio (ideia da PR #31): o gerador grava a assinatura do
+// HTML que produziu; se o arquivo em disco não bate mais com ela, alguém editou à mão e o gerador não sobrescreve.
+function assinatura(html) {
+  return createHash("sha256").update(html).digest("hex").slice(0, 16);
+}
+export function foiEditada(arquivo) {
+  const m = arquivo.match(/<!-- assinatura:([0-9a-f]{16}) -->\n?$/);
+  if (!m) return true;
+  return assinatura(arquivo.slice(0, m.index)) !== m[1];
 }
