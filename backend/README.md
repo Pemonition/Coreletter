@@ -1,24 +1,54 @@
-# Backend RadarPlural
+# Backend Coreletter (nome técnico RadarPlural)
 
-.NET 10, ASP.NET Core, EF Core e PostgreSQL. Contratos em API.md. Não faz scraping nem chamadas Gemini. Senhas usam PasswordHasher padrão ASP.NET Core; sessão cookie HttpOnly/SameSite Strict, autorização por proprietário e perfil. Rodar local, via proxy Angular preservando Host (changeOrigin:false).
+.NET 10, ASP.NET Core (minimal APIs), EF Core e PostgreSQL, em arquitetura hexagonal. Contrato HTTP em `API.md`; decisão de arquitetura em `docs/decisoes/0003-arquitetura-hexagonal.md`.
+
+## Estrutura
+
+```
+RadarPlural.Domain/          núcleo: entidades, regras, portas (interfaces). Não depende de nada.
+  Members/ Posts/ News/      entidades e regras de cada assunto
+  Billing/                   RN01: FinancialRules, UsageBudget (ainda não ligados a endpoints)
+  Ports/                     IPostRepository, IMemberRepository, IReportRepository, INewsRepository, IPasswordHasher
+RadarPlural.Application/     casos de uso: AuthService, PostService, NewsService, ModerationService; DTOs; Result<T>
+RadarPlural.Infrastructure/  adapters de saída: AppDb (EF Core), repositórios, migrações, hash de senha, health check
+RadarPlural.Api/             adapter de entrada: Endpoints/ (um arquivo por recurso), Http/ (sessão, erros, middlewares)
+RadarPlural.Ingestion/       download seguro e parser RSS/Atom (usado pelo Worker)
+RadarPlural.Worker/          coletor de notícias (console; GitHub Actions ou CronJob no Kubernetes)
+RadarPlural.Tests/           unitários: regras puras e casos de uso com adapters em memória
+RadarPlural.IntegrationTests/ API real + PostgreSQL real (Testcontainers)
+```
+
+Para adicionar uma funcionalidade: entidade e porta no Domain → caso de uso na Application (com teste usando adapter em memória) → repositório na Infrastructure → endpoint na Api (com teste de integração quando houver regra de permissão ou de banco).
 
 ## Executar
 
-No PowerShell, a partir da raiz do repositório, com PostgreSQL criado:
+No PowerShell, a partir da raiz, com o banco do `compose.yaml` no ar (`.\scripts\Start-Database.ps1`), use `.\scripts\Start-Api.ps1` ou:
 
 ```powershell
 $env:ASPNETCORE_ENVIRONMENT='Development'
-$env:ConnectionStrings__Default='Host=localhost;Port=5433;Database=radarplural;Username=radarplural;Password=VALOR_LOCAL_DO_COMPOSE'
+$env:ConnectionStrings__Default='Host=localhost;Port=5433;Database=radarplural;Username=radarplural;Password=VALOR_DO_.env'
 dotnet run --project .\backend\RadarPlural.Api
 ```
 
-Banco vazio é criado por EnsureCreated exclusivamente em Development. Para evolução, substituir por migrações versionadas; não executar EnsureCreated em base existente de produção. Endereço localhost:5080. Nunca expor este servidor de desenvolvimento à internet.
+- API em http://localhost:5080. Documentação interativa em http://localhost:5080/swagger (OpenAPI em `/openapi/v1.json`), só em Development ou com `OpenApi__Enabled=true`.
+- As migrações são aplicadas na inicialização (`Database__MigrateOnStartup`, padrão `true`). `dotnet RadarPlural.Api.dll --migrate` aplica e encerra (usado no Kubernetes).
+- Saúde: `/api/health` (processo vivo, sem banco) e `/api/health/ready` (consegue falar com o banco).
+- Fora de Development o log sai em JSON, uma linha por evento.
+
+Nova migração depois de alterar entidade:
+
+```powershell
+dotnet tool restore
+dotnet ef migrations add NomeDaMudanca --project backend/RadarPlural.Infrastructure --startup-project backend/RadarPlural.Api
+```
+
+O teste `MigrationsCoverTheModel` falha se alguém mudar entidade e esquecer a migração.
 
 ## Administrador local
 
 1. Cadastre sua conta na interface.
-2. Pare a API; defina `$env:BootstrapAdminEmail='seu-email-cadastrado'` e inicie novamente em Development.
-3. Faça logout/login para atualizar o papel no cookie. Remova a variável quando terminar. Nenhuma senha ou administrador padrão é distribuído.
+2. Pare a API; defina `$env:BootstrapAdminEmail='seu-email-cadastrado'` e inicie novamente.
+3. Faça logout/login para atualizar o papel no cookie. Nenhuma senha ou administrador padrão é distribuído.
 
 ## Testes
 
@@ -26,15 +56,17 @@ Banco vazio é criado por EnsureCreated exclusivamente em Development. Para evol
 dotnet test .\backend\RadarPlural.slnx
 ```
 
-Os testes atuais verificam regras puras: links, limite de orçamento, contribuição, rejeição de parâmetros inválidos, quota, concorrência e repetição idempotente. Não afirmamos ciclo TDD completo retroativamente: guardar evidência RED/GREEN nas próximas tarefas.
+- `RadarPlural.Tests`: regras puras (links, RN01, quota, concorrência), ingestão RSS e casos de uso com adapters em memória. Não precisa de banco.
+- `RadarPlural.IntegrationTests`: sobe a API real (`WebApplicationFactory<Program>`) contra PostgreSQL 17 descartável via **Testcontainers** (precisa do Docker Desktop em execução). Sem Docker, defina `INTEGRATION_DATABASE_URL` apontando para um PostgreSQL de teste com permissão `CREATEDB`; cada execução cria e apaga um banco próprio.
+- `scripts/Test-Api.ps1` continua como teste de fumaça contra uma API já rodando (usado pela CI no container).
+
+Cenários da B08 (#16) ainda sem teste automatizado: fluxo do administrador (listar, ocultar, item sumir do feed), publicar podcast/música pela API e filtros. A estrutura está pronta: veja `ApiFactory.SignedUpAsync` e os testes em `AuthAndIsolationTests`.
 
 ## Limites e próximos passos
 
-- UsageBudget é domínio demonstrativo em memória, NÃO conectado a assinaturas, endpoints ou IA. Não é ledger financeiro de produção; faltam persistência transacional, períodos, reservas/liquidação/estorno, idempotência com verificação de payload e testes PostgreSQL. RN01/RN03 são cálculos iniciais, não validação de rentabilidade real.
-- O cenário scripts/Test-Api.ps1 passou com PostgreSQL real descartável na CI inicial (run40426458380). Ele cobre permissões entre contas e isolamento de salvos; o fluxo visual e a moderação como administrador continuam no roteiro manual. O engine Docker local não estava disponível nesta sessão.
-- Rate limit em memória por IP60/min para login/cadastro e operações autenticadas. Não substitui proteção distribuída, auditoria e política de recuperação de conta em produção.
-- Cadastro aberto apenas para demonstração local; sem confirmação de e-mail ou recuperação de senha. Sem dados pessoais reais no demo.
-- Link é armazenado como referência. Servidor não baixa a URL. Frontend deve abrir com noopener/noreferrer. Busca de metadados futura exige proteção SSRF.
-- Lista de salvos e denúncias administrativas limitada a100 nesta base; feed público paginado até50. Sem algoritmo de recomendação ou conteúdo HTML remoto.
-- Denúncias não ocultam automaticamente. Apenas admin pode ocultar. Conta cadastrada não pode tornar-se admin pela API.
-- Segurança de produção exige HTTPS, migrations, retenção e privacidade, logs e limites de payload, verificação de dependências e testes de autorização e CSRF.
+- UsageBudget é domínio demonstrativo em memória, NÃO conectado a assinaturas, endpoints ou IA. Faltam persistência transacional, períodos, reservas/liquidação/estorno. RN01/RN03 são cálculos iniciais.
+- Rate limit em memória por IP (60/min, `RateLimit__PermitLimit`) para login/cadastro e operações autenticadas. Com várias réplicas, cada uma conta separado; proteção distribuída exigiria Redis ou o gateway.
+- Cadastro aberto apenas para demonstração; sem confirmação de e-mail ou recuperação de senha.
+- Link é armazenado como referência. Servidor não baixa a URL.
+- Lista de salvos e denúncias limitada a 100; feed paginado até 50.
+- Denúncias não ocultam automaticamente; não há desfazer ocultação (#17).

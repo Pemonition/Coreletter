@@ -41,7 +41,9 @@ Abra http://localhost:4200. API em http://localhost:5080/api/health. Banco em lo
 
 Se o seu banco local foi criado antes das migrações (com `EnsureCreated`), a API vai falhar ao iniciar porque as tabelas já existem sem histórico. Como o banco local só tem dados fictícios, recrie-o uma vez com `docker compose down -v` e `.\scripts\Start-Database.ps1`.
 
-Para criar uma nova migração depois de alterar entidades: `dotnet tool restore` e `dotnet ef migrations add NomeDaMudanca --project backend/RadarPlural.Api` (com `ConnectionStrings__Default` definido). Revise o arquivo gerado na PR.
+Para criar uma nova migração depois de alterar entidades: `dotnet tool restore` e `dotnet ef migrations add NomeDaMudanca --project backend/RadarPlural.Infrastructure --startup-project backend/RadarPlural.Api` (com `ConnectionStrings__Default` definido). Revise o arquivo gerado na PR.
+
+Com a API em Development, a documentação interativa fica em http://localhost:5080/swagger.
 
 Para validar a base:
 
@@ -49,9 +51,17 @@ Para validar a base:
 .\scripts\Check.ps1
 ```
 
-Isso executa os testes do back-end e o build Angular; testes com PostgreSQL e fluxo no navegador devem ser registrados separadamente quando executados. Para parar o banco sem apagar dados: `docker compose stop`. Não use exclusão de volumes se quiser manter os dados.
+Isso executa os testes do back-end (unitários e de integração) e o build Angular. Os testes de integração sobem um PostgreSQL descartável com Testcontainers, então o Docker Desktop precisa estar em execução; detalhes e alternativa sem Docker em `backend/README.md`. O fluxo no navegador deve ser registrado separadamente quando executado. Para parar o banco sem apagar dados: `docker compose stop`. Não use exclusão de volumes se quiser manter os dados.
 
 Com a API e um banco descartável em execução, `pwsh -File scripts/Test-Api.ps1` verifica cadastro, publicação, permissões e isolamento de salvos. Ele cria contas fictícias e remove a publicação de teste. A CI executa esse cenário usando PostgreSQL descartável.
+
+## Arquitetura do backend
+
+Arquitetura hexagonal em quatro projetos: `Domain` (entidades, regras e portas), `Application` (casos de uso), `Infrastructure` (EF Core/PostgreSQL) e `Api` (endpoints HTTP). Mapa das pastas e o caminho para adicionar uma funcionalidade em `backend/README.md`; motivos em `docs/decisoes/0003-arquitetura-hexagonal.md`.
+
+## Kubernetes (cluster local)
+
+`k8s/` tem os manifestos (Namespace, ConfigMap, Secret, PostgreSQL, API com 2 réplicas e Service, CronJob do coletor) e um passo a passo para o Kubernetes do Docker Desktop em `k8s/README.md`. A CI sobe tudo num cluster kind a cada push. Decisão em `docs/decisoes/0004-kubernetes.md`.
 
 ## Demonstração na nuvem (Render, plano gratuito)
 

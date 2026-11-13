@@ -26,6 +26,7 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
+      # Unitários + integração. Os de integração sobem PostgreSQL próprio via Testcontainers (Docker do runner).
       - run: dotnet test backend/RadarPlural.slnx --configuration Release
       - name: Iniciar API com PostgreSQL descartavel
         env:
@@ -95,3 +96,33 @@ jobs:
         if: always()
         run: docker logs coreletter || true
 
+  kubernetes:
+    # Sobe o Coreletter num cluster kind real: manifestos válidos, migração no initContainer,
+    # 2 réplicas prontas, Service respondendo, rolling update e CronJob do coletor.
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v5
+      - name: Construir imagens
+        run: |
+          docker build -t coreletter-api:local .
+          docker build -t coreletter-worker:local -f Dockerfile.worker .
+      - name: Validar manifestos (kubeconform)
+        run: |
+          cp k8s/overlays/local/secrets.env.example k8s/overlays/local/secrets.env
+          curl -sSL https://github.com/yannh/kubeconform/releases/download/v0.7.0/kubeconform-linux-amd64.tar.gz | tar xz kubeconform
+          kubectl kustomize k8s/overlays/local | ./kubeconform -strict -summary
+      - uses: helm/kind-action@v1
+        with:
+          cluster_name: coreletter
+      - name: Implantar e testar
+        run: |
+          kind load docker-image coreletter-api:local coreletter-worker:local --name coreletter
+          kubectl apply -k k8s/overlays/local
+          ./scripts/Test-K8s.sh
+      - name: Diagnóstico do cluster
+        if: failure()
+        run: |
+          kubectl -n coreletter get all,events --sort-by=.lastTimestamp || true
+          kubectl -n coreletter describe pods || true
+          kubectl -n coreletter logs -l app.kubernetes.io/name=coreletter-api --all-containers --tail=100 || true
