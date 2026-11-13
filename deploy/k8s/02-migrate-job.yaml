@@ -1,0 +1,30 @@
+# Migração do banco UMA vez, antes das réplicas. Com 2+ réplicas migrando juntas, uma caiu com
+# "column already exists" (teste registrado em decisoes/0004). Rodar de novo a cada nova versão:
+#   kubectl -n coreletter delete job coreletter-migrate --ignore-not-found && kubectl apply -f 02-migrate-job.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: coreletter-migrate
+  namespace: coreletter
+spec:
+  backoffLimit: 2
+  activeDeadlineSeconds: 300
+  ttlSecondsAfterFinished: 3600
+  template:
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: migrate
+          image: coreletter-api:local
+          imagePullPolicy: IfNotPresent
+          args: ["--migrate-only"]
+          envFrom:
+            - configMapRef:
+                name: coreletter-config
+            - secretRef:
+                name: coreletter-secrets
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { cpu: 500m, memory: 256Mi }

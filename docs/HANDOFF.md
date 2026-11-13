@@ -42,6 +42,34 @@ TDD registrado: RED com 62 falhas esperadas (`NotImplementedException`) e 24 apr
 
 Validado localmente com PostgreSQL 16 real e rede: API aplicou as migrações; coletor leu 7 fontes, gravou 200 itens; segunda execução gravou 0 (deduplicação); `/api/news` com filtros por tema e fonte e erro 400 para página inválida; resumos até 299 caracteres. g1 e Folha retornaram 403 ao robô identificado e foram retirados da lista. Ainda não executados: o workflow `ingestao.yml` no GitHub (só dispara da `main`; testar por *Run workflow*) e a gravação no banco do Render (depende do secret).
 
+## Triagem e agrupamento (12/11/2026, branch feat/triagem-agrupamento, sobre feat/deploy-render)
+
+Decisão 0003 (PR de documentação separada). `Triage` e `StoryClusterer`/`StoryReconciler` em `RadarPlural.Ingestion`; `StoryStore` no Worker; migração `TriagemHistorias` (status/motivo/marcas em `FeedItems`, tabela `Stories`); `GET /api/stories`; `/api/news` só com notícias aprovadas.
+
+TDD: RED 33 falhas esperadas → GREEN 134. Segunda rodada com dados reais revelou 3 erros de agrupamento (encadeamento via "CEO", "GTA 6 + Xbox" juntando eventos diferentes, maiúscula após "?" tratada como nome) e guias de compra/resumo do dia passando: viraram 10 testes RED → GREEN 143. Regra "2 nomes próprios" removida por causa disso.
+
+Validado com PostgreSQL 16 e feeds reais: ~200 notícias por coleta, ~50 descartadas (42 por caminho de afiliado), ~130 histórias, 12 com 2+ fontes. Reexecução mantém ids; divisão de história errada manteve o id na parte maior; zero histórias órfãs; contagens conferidas por SQL. Limitações: regra por palavras não entende sinônimos ("renuncia" × "deixa") e depende de nome próprio; mesma história com manchetes muito diferentes pode ficar separada (ex.: "Epic Games" × "Jogos grátis na Epic Games"); manchetes TODAS EM MAIÚSCULAS contam todas as palavras como nome.
+
+## Escala desde o MVP (12/11/2026, branch feat/escala-pipeline, sobre feat/triagem-agrupamento)
+
+Decisão `docs/decisoes/0004-escala-desde-o-mvp.md`. Projetos novos: `RadarPlural.Pipeline` (casos de uso e portas: `StageRunner`, `RetryPolicy`, `IStoryQueue`, `IAuditor`…) e `RadarPlural.Infrastructure` (adaptadores PostgreSQL: `PgStoryQueue`, e `FeedItemStore`/`StoryStore` movidos do Worker). Worker `--etapa`; API `/api/health/ready`, `--migrate-only`, `Database__MigrateOnStartup`, `RateLimit__PermitPerMinute`; `deploy/k8s`; `Dockerfile.worker`; `scripts/carga`.
+
+TDD: executor RED 26 → GREEN (o teste "notícia nova devolve a história ao início" passou de primeira porque o SQL foi escrito antes do teste: registrado como tal). Teto de custo RED 13 → GREEN. Testes de arquitetura escritos depois (trava). Total **186 testes**, 7 de integração com PostgreSQL (ignorados sem `INTEGRATION_DATABASE_URL`; a CI define). Mutações conferidas: sem `SKIP LOCKED` o teste de concorrência falha 3/3; `maxReplicas: 9` estoura o teto; `Pipeline` dependendo de Npgsql quebra o teste de arquitetura.
+
+Bug encontrado e corrigido: duas instâncias da API migrando juntas → uma cai. Linha de base de carga em 1 núcleo: ~480 req/s, p95 149 ms com 50 usuários, 0 erros.
+
+## Regra de rentabilidade, versão básica (12/11/2026, branch feat/rentabilidade, sobre feat/escala-pipeline)
+
+Projeto novo `RadarPlural.Domain` (Billing: RN01 quota, RN02 margem mínima, RN04 ponto de equilíbrio, porta `IUsageLedger`) e `PgUsageLedger` (RN03 reserva atômica). Migração `Rentabilidade` (`Members.PlanId`, `UsageMonths`, `UsageReservations`). Endpoints `/api/plans`, `/api/me/usage`, `/api/admin/members/{id}/plan`. API não inicia se um plano violar RN02 (verificado: Plus a R$ 7,06 derruba a inicialização).
+
+TDD: regras RED 26 → GREEN; reserva RED 4 → GREEN; total 218 testes, 3/3 execuções. Mutação: sem `WHERE used < quota` o teste de 50 pedidos simultâneos falha. Feita por Hugo como base para o Davidy (B07) melhorar; o `UsageBudget` em memória antigo continua no código até a B05 trocar pelo ledger.
+
+## Comparador simulado, versão básica (12/11/2026, branch feat/comparador-simulado, sobre feat/rentabilidade)
+
+`ContractValidator` (contrato v1), `SimulatedAuditor`, `AuditStageHandler` (Worker `--etapa auditoria` agora funciona), `CompareStory` (cache 24 h + RN03 + devolução), `PgStoryReader`/`PgAuditStore`, migração `Comparacoes` (`StoryAudits` jsonb). API: `GET /api/stories/{id}/comparison`, `POST /api/comparisons`.
+
+TDD: validador/auditor/etapa RED 19 → GREEN; caso de uso RED 8 → GREEN; teste de integração ponta a ponta escrito depois dos adaptadores. Total 247. Validado com feeds reais: 10 histórias corroboradas auditadas pela fila; usuário Grátis: 3 cobradas, 4ª 403, cache e idempotência sem cobrança dupla.
+
 ## Próxima sessão
 
 1. Aceitar convites, conferir CI e executar B01 com PostgreSQL na máquina dos integrantes.

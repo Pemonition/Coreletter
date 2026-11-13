@@ -1,0 +1,72 @@
+{
+  "versao": 1,
+  "id": "como-funciona",
+  "titulo": "Como o Coreletter funciona",
+  "formato": { "largura": 1920, "altura": 1080 },
+  "cenas": [
+    {
+      "tipo": "abertura",
+      "duracao": 5,
+      "titulo": "A mesma notícia, vários veículos",
+      "texto": "Como o Coreletter compara a cobertura antes de você formar sua opinião."
+    },
+    {
+      "tipo": "texto",
+      "duracao": 6,
+      "titulo": "Cada veículo conta de um jeito",
+      "texto": "Um destaca um dado, outro omite um detalhe, um terceiro dá um número diferente. Lendo só um, você não vê a diferença."
+    },
+    {
+      "tipo": "etapa",
+      "duracao": 7,
+      "numero": 1,
+      "titulo": "Coleta",
+      "texto": "A cada 3 horas, lemos os feeds RSS de 7 veículos aprovados.",
+      "itens": ["Só título, link e um resumo curto", "A matéria completa fica no site do veículo"]
+    },
+    {
+      "tipo": "etapa",
+      "duracao": 7,
+      "numero": 2,
+      "titulo": "Triagem",
+      "texto": "Regras simples tiram o que não é notícia.",
+      "itens": ["Promoção e link de afiliado", "Resumo do dia e notícia velha", "Título caça-clique ganha um aviso"]
+    },
+    {
+      "tipo": "etapa",
+      "duracao": 7,
+      "numero": 3,
+      "titulo": "Agrupamento",
+      "texto": "Juntamos a mesma notícia publicada por veículos diferentes numa história só.",
+      "itens": ["Nomes próprios e palavras em comum", "Publicadas com até 48 horas de diferença"]
+    },
+    {
+      "tipo": "comparacao",
+      "duracao": 10,
+      "titulo": "Comparação das fontes",
+      "afirmacoes": [
+        { "status": "concordante", "texto": "Os três veículos noticiam o mesmo vazamento de dados.", "fontes": ["Veículo A", "Veículo B", "Veículo C"] },
+        { "status": "unica_fonte", "texto": "Só um veículo diz quantos clientes foram afetados.", "fontes": ["Veículo B"] },
+        { "status": "divergente", "texto": "As datas do ataque não batem entre as fontes.", "fontes": ["Veículo A", "Veículo C"] }
+      ]
+    },
+    {
+      "tipo": "texto",
+      "duracao": 6,
+      "titulo": "Sem selo de verdade",
+      "texto": "Mostramos onde as fontes concordam e divergem, sempre com o trecho e o link. A conclusão é sua."
+    },
+    {
+      "tipo": "texto",
+      "duracao": 6,
+      "titulo": "Grátis para começar",
+      "texto": "3 comparações por mês no plano Grátis e 60 no Plus. Comparação já feita não gasta nada."
+    },
+    {
+      "tipo": "fechamento",
+      "duracao": 5,
+      "titulo": "Leia mais de um lado",
+      "texto": "Coreletter: a mesma notícia, vários veículos."
+    }
+  ]
+}

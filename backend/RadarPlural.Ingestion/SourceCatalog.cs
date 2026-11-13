@@ -11,7 +11,7 @@ public static partial class SourceCatalog
     [GeneratedRegex("^[a-z0-9][a-z0-9-]{0,63}$")]
     private static partial Regex IdPattern();
 
-    private sealed record Row(string? Id, string? Name, string? Url, string? Topic);
+    private sealed record Row(string? Id, string? Name, string? Url, string? Topic, List<string>? ExcludeUrlContains);
 
     public static IReadOnlyList<FeedSource> Parse(string json)
     {
@@ -38,7 +38,10 @@ public static partial class SourceCatalog
             if (!Uri.TryCreate(row.Url, UriKind.Absolute, out var url) || url.Scheme != Uri.UriSchemeHttps || !url.IsDefaultPort
                 || !string.IsNullOrEmpty(url.UserInfo) || url.HostNameType != UriHostNameType.Dns || IPAddress.TryParse(url.Host, out _))
                 throw new IngestionException($"Fonte {label}: URL precisa ser https, com nome de domínio, porta padrão e sem credenciais.");
-            result.Add(new FeedSource(row.Id, row.Name.Trim(), url, row.Topic.Trim().ToLowerInvariant()));
+            var exclude = (row.ExcludeUrlContains ?? []).Select(x => x?.Trim() ?? "").ToList();
+            // "/" ou vazio descartaria a fonte inteira por engano.
+            if (exclude.Any(x => x.Length < 3 || x.Length > 100)) throw new IngestionException($"Fonte {label}: cada item de excludeUrlContains precisa ter de 3 a 100 caracteres.");
+            result.Add(new FeedSource(row.Id, row.Name.Trim(), url, row.Topic.Trim().ToLowerInvariant(), exclude));
         }
         return result;
     }
