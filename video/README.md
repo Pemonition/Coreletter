@@ -4,7 +4,9 @@ Esta pasta transforma um **roteiro em JSON** num **vídeo MP4** com a marca do C
 
 Usos planejados (issue #20):
 
-- **Vídeo da equipe:** "Como o Coreletter funciona" (pronto, em `roteiros/como-funciona.json`).
+- **Vídeo da equipe:** "Como o Coreletter funciona" (59 s, `roteiros/como-funciona.json`).
+- **Proposta:** "De pessoas para pessoas, sem algoritmo" (1 min, `roteiros/proposta.json`): os 4 compromissos e quanto cumprimos (`docs/PROPOSTA.md`).
+- **Tour pelo código:** "Por dentro do Coreletter" (2min42, `roteiros/tour-do-codigo.json`), cada parte com o trecho real. Gerado por `gerador/tour.mjs` a partir de `roteiros/tour-do-codigo.fonte.json`; o mesmo script escreve `docs/TOUR.md`. Se o código mudar, um teste avisa: rode `node video/gerador/tour.mjs --docs docs/TOUR.md` e gere de novo.
 - **Abertura do TCC** e **artigo da plataforma:** o mesmo vídeo, ou um corte dele.
 - **Tutoriais para o usuário:** como comparar fontes, planos etc.
 - **Produto:** o vídeo-resumo de cada história, gerado pelo pipeline (auditor → roteirista → vídeo, `docs/decisoes/0003`).
@@ -74,7 +76,7 @@ Pré-requisitos: Node 22+ e o HyperFrames desktop instalado (ele traz o FFmpeg).
 |---|---|
 | `id` | minúsculas, números e hífen; vira o nome da pasta |
 | `formato` | 1920x1080 (horizontal), 1080x1920 (vertical, Reels/Shorts) ou 1080x1080 |
-| `tipo` | `abertura`, `texto`, `etapa` (com `numero` 1–9), `comparacao` (com `afirmacoes`), `fechamento` |
+| `tipo` | `abertura`, `texto`, `etapa` (com `numero` 1–9), `comparacao` (com `afirmacoes`), `codigo` (com `arquivo`, `linha`, `linguagem` e `codigo`: até 16 linhas na tela), `fechamento` |
 | `duracao` | 2 a 30 s por cena; total até 180 s |
 | `titulo` / `texto` | até 70 / 180 caracteres, uma linha (a quebra é automática) |
 | `itens` | até 4, com até 70 caracteres cada |

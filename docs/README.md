@@ -12,10 +12,19 @@ Comece por aqui. Cada projeto da solução tem um README com o que faz, em que c
 | `RadarPlural.Api` | Entrada web (WebApi) | Davidy · Henrique | `backend/RadarPlural.Api/README.md` |
 | `RadarPlural.Worker` | Entrada (linha de comando) | Hugo | `backend/RadarPlural.Worker/README.md` |
 | `RadarPlural.Tests` | Testes | Todos | `backend/RadarPlural.Tests/README.md` |
-| `frontend/` | Interface (Angular) | Lindomar | `README.md` (raiz) |
+| `frontend/` | Interface (Angular) | Lindomar | `frontend/README.md` |
+| `video/` | Vídeos (HyperFrames) | Hugo · Davidy (etapa no Worker) | `video/README.md` |
 | `deploy/k8s/` | Implantação | Hugo (todos praticam) | `deploy/k8s/README.md` |
 
 Regra de dependência: domínio e aplicação não conhecem banco nem web. Quem implementa as portas é a infraestrutura. `ArchitectureTests` falha se isso for quebrado.
+
+## Comece por aqui
+| Documento | Para quê |
+|---|---|
+| `PROPOSTA.md` | **A proposta "de pessoas para pessoas, sem algoritmo"** conferida contra o código: o que cumpre, o que falta e o plano |
+| `COMO-MOSTRAR.md` | Onde ver o projeto (demo, mapa, vídeos) e como apresentar na banca |
+| `TOUR.md` | Tour pelo código: cada parte com o trecho real (gerado pelo mesmo script do vídeo) |
+| `../video/README.md` | Vídeos com HyperFrames: como gerar e renderizar |
 
 ## Para entender o projeto
 | Documento | Para quê |
