@@ -61,7 +61,7 @@ Validação executada no ambiente de nuvem do assistente (Linux, .NET SDK 10.0.4
 - Fluxo no Chromium headless contra o container: cadastro, publicação e card no feed, sem violação de CSP. Único erro no console: 401 do `/auth/me` de visitante (#17, anterior a esta mudança).
 - Manifestos: `kubectl kustomize` + kubeconform `-strict` (8 recursos válidos).
 
-Não executado aqui: cluster Kubernetes real. O kind não sobe nesse ambiente (containers aninhados não suportados). A prova fica com o job `kubernetes` da CI; conferir o resultado na PR. Também não testado: Kubernetes do Docker Desktop no Windows dos integrantes.
+Cluster real: o kind não sobe no ambiente do assistente (containers aninhados), então a prova ficou com o job `kubernetes` da CI na PR #37. A primeira execução falhou e revelou um bug que o kubeconform não pega (Secret gerado fora do namespace; corrigido). Na segunda, tudo aprovado: 2 réplicas prontas, initContainer de migração com código 0, Service respondendo, cadastro, rolling update concluído e CronJob executado sob demanda gravando 200 notícias de 7 fontes, 0 falhas. Não testado: Kubernetes do Docker Desktop no Windows dos integrantes.
 
 ## Próxima sessão
 

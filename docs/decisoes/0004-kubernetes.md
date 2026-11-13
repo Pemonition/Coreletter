@@ -25,4 +25,4 @@ A disciplina cobriu Kubernetes (cluster, control plane, nodes, pods, Deployment,
 ## Consequências e limites
 - Cookie `Secure` em Production: navegador aceita em `http://localhost` via port-forward, mas o `Test-Api.ps1` não. Por isso o teste do cluster usa `curl`/`Test-K8s.sh`.
 - Sem HPA (exige metrics-server) e sem NetworkPolicy; evoluções possíveis.
-- Não foi possível subir kind no ambiente de nuvem onde a mudança foi preparada (containers aninhados não suportados). A validação real do cluster fica com o job `kubernetes` da CI.
+- A validação em cluster real é o job `kubernetes` da CI (kind). Ele já pegou um erro que a validação de esquema não pega: o Secret gerado ficava fora do namespace. Mantê-lo obrigatório antes do merge.
