@@ -23,6 +23,7 @@ Regra de dependência: domínio e aplicação não conhecem banco nem web. Quem 
 |---|---|
 | `PROPOSTA.md` | **A proposta "de pessoas para pessoas, sem algoritmo"** conferida contra o código: o que cumpre, o que falta e o plano |
 | `COMO-MOSTRAR.md` | Onde ver o projeto (demo, mapa, vídeos) e como apresentar na banca |
+| `PRODUCAO.md` | O que falta para a versão de produção, em duas fases (banca e usuários reais) |
 | `TOUR.md` | Tour pelo código: cada parte com o trecho real (gerado pelo mesmo script do vídeo) |
 | `../video/README.md` | Vídeos com HyperFrames: como gerar e renderizar |
 
