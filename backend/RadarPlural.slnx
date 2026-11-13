@@ -1,5 +1,8 @@
 <Solution>
   <Project Path="RadarPlural.Api/RadarPlural.Api.csproj" />
+  <Project Path="RadarPlural.Application/RadarPlural.Application.csproj" />
+  <Project Path="RadarPlural.Domain/RadarPlural.Domain.csproj" />
+  <Project Path="RadarPlural.Infrastructure/RadarPlural.Infrastructure.csproj" />
   <Project Path="RadarPlural.Ingestion/RadarPlural.Ingestion.csproj" />
   <Project Path="RadarPlural.IntegrationTests/RadarPlural.IntegrationTests.csproj" />
   <Project Path="RadarPlural.Tests/RadarPlural.Tests.csproj" />

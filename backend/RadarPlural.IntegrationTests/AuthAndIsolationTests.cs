@@ -3,7 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using RadarPlural.Api;
+using RadarPlural.Infrastructure.Persistence;
 
 namespace RadarPlural.IntegrationTests;
 

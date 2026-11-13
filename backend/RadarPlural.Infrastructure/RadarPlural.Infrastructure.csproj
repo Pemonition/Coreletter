@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Adapters de saída: EF Core + PostgreSQL, hash de senha, migrações. Implementa as portas do domínio. -->
+  <ItemGroup>
+    <ProjectReference Include="..\RadarPlural.Application\RadarPlural.Application.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- PasswordHasher (Identity) e DataProtection vêm do framework compartilhado do ASP.NET Core. -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" Version="10.0.14" />
+    <!-- Unifica o EF Core em 10.0.14 (o Npgsql 10.0.0 referencia 10.0.0) e evita aviso MSB3277. -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.0.14" />
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="10.0.14" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.0" />
+  </ItemGroup>
+</Project>

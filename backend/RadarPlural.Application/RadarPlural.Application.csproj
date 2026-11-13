@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Casos de uso. Conhece só o domínio e as portas; não sabe que existe HTTP, EF Core ou PostgreSQL. -->
+  <ItemGroup>
+    <ProjectReference Include="..\RadarPlural.Domain\RadarPlural.Domain.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.0" />
+  </ItemGroup>
+</Project>

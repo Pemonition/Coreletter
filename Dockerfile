@@ -13,8 +13,16 @@ RUN npm run build
 # global.json não é copiado: a imagem do SDK define a versão 10.0.x usada no build.
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS api
 WORKDIR /src
+# Primeiro só os .csproj: a camada do restore fica em cache enquanto as dependências não mudam.
+COPY backend/Directory.Build.props backend/
+COPY backend/RadarPlural.Domain/RadarPlural.Domain.csproj backend/RadarPlural.Domain/
+COPY backend/RadarPlural.Application/RadarPlural.Application.csproj backend/RadarPlural.Application/
+COPY backend/RadarPlural.Infrastructure/RadarPlural.Infrastructure.csproj backend/RadarPlural.Infrastructure/
 COPY backend/RadarPlural.Api/RadarPlural.Api.csproj backend/RadarPlural.Api/
 RUN dotnet restore backend/RadarPlural.Api/RadarPlural.Api.csproj
+COPY backend/RadarPlural.Domain/ backend/RadarPlural.Domain/
+COPY backend/RadarPlural.Application/ backend/RadarPlural.Application/
+COPY backend/RadarPlural.Infrastructure/ backend/RadarPlural.Infrastructure/
 COPY backend/RadarPlural.Api/ backend/RadarPlural.Api/
 RUN dotnet publish backend/RadarPlural.Api/RadarPlural.Api.csproj -c Release -o /app --no-restore
 

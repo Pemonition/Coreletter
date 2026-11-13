@@ -1,6 +1,6 @@
 using System.Diagnostics;
 using Npgsql;
-using RadarPlural.Api;
+using RadarPlural.Infrastructure.Persistence;
 using RadarPlural.Ingestion;
 using RadarPlural.Worker;
 

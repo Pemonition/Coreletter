@@ -1,6 +1,6 @@
 using Npgsql;
 
-namespace RadarPlural.Api;
+namespace RadarPlural.Infrastructure.Persistence;
 
 // Provedores gerenciados entregam postgresql://usuario:senha@host:porta/banco; o Npgsql espera chave=valor.
 public static class DatabaseUrl

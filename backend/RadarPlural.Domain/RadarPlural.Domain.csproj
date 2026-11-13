@@ -1,0 +1,3 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Núcleo da arquitetura hexagonal: entidades, regras e portas. Não referencia nenhum outro projeto nem framework. -->
+</Project>

@@ -1,5 +1,5 @@
 using Npgsql;
-using RadarPlural.Api;
+using RadarPlural.Infrastructure.Persistence;
 
 namespace RadarPlural.Tests;
 

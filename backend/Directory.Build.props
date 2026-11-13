@@ -1,0 +1,10 @@
+<Project>
+  <!-- Configuração comum a todos os projetos .NET do backend. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Na CI (GitHub Actions define CI=true) aviso vira erro; localmente continua só aviso para não travar quem está aprendendo. -->
+    <TreatWarningsAsErrors Condition="'$(CI)' == 'true'">true</TreatWarningsAsErrors>
+  </PropertyGroup>
+</Project>

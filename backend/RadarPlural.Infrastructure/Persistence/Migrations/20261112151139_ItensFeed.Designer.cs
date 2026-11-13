@@ -5,11 +5,11 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using RadarPlural.Api;
+using RadarPlural.Infrastructure.Persistence;
 
 #nullable disable
 
-namespace RadarPlural.Api.Migrations
+namespace RadarPlural.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AppDb))]
     [Migration("20261112151139_ItensFeed")]
@@ -44,7 +44,7 @@ namespace RadarPlural.Api.Migrations
                     b.ToTable("DataProtectionKeys");
                 });
 
-            modelBuilder.Entity("RadarPlural.Api.FeedItem", b =>
+            modelBuilder.Entity("RadarPlural.Domain.News.FeedItem", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -96,7 +96,7 @@ namespace RadarPlural.Api.Migrations
                     b.ToTable("FeedItems");
                 });
 
-            modelBuilder.Entity("RadarPlural.Api.Member", b =>
+            modelBuilder.Entity("RadarPlural.Domain.Members.Member", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -125,7 +125,7 @@ namespace RadarPlural.Api.Migrations
                     b.ToTable("Members");
                 });
 
-            modelBuilder.Entity("RadarPlural.Api.Post", b =>
+            modelBuilder.Entity("RadarPlural.Domain.Posts.Post", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -169,7 +169,7 @@ namespace RadarPlural.Api.Migrations
                     b.ToTable("Posts");
                 });
 
-            modelBuilder.Entity("RadarPlural.Api.Report", b =>
+            modelBuilder.Entity("RadarPlural.Domain.Posts.Report", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -195,7 +195,7 @@ namespace RadarPlural.Api.Migrations
                     b.ToTable("Reports");
                 });
 
-            modelBuilder.Entity("RadarPlural.Api.SavedPost", b =>
+            modelBuilder.Entity("RadarPlural.Domain.Posts.SavedPost", b =>
                 {
                     b.Property<Guid>("MemberId")
                         .HasColumnType("uuid");
@@ -210,18 +210,18 @@ namespace RadarPlural.Api.Migrations
                     b.ToTable("Saved");
                 });
 
-            modelBuilder.Entity("RadarPlural.Api.Report", b =>
+            modelBuilder.Entity("RadarPlural.Domain.Posts.Report", b =>
                 {
-                    b.HasOne("RadarPlural.Api.Post", null)
+                    b.HasOne("RadarPlural.Domain.Posts.Post", null)
                         .WithMany()
                         .HasForeignKey("PostId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("RadarPlural.Api.SavedPost", b =>
+            modelBuilder.Entity("RadarPlural.Domain.Posts.SavedPost", b =>
                 {
-                    b.HasOne("RadarPlural.Api.Post", null)
+                    b.HasOne("RadarPlural.Domain.Posts.Post", null)
                         .WithMany()
                         .HasForeignKey("PostId")
                         .OnDelete(DeleteBehavior.Cascade)

@@ -1,30 +1,46 @@
-using System.Security.Claims;
-
-using Microsoft.AspNetCore.Authentication;
-
+using System.Diagnostics;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using RadarPlural.Api.Endpoints;
+using RadarPlural.Api.Http;
+using RadarPlural.Application;
+using RadarPlural.Infrastructure;
+using RadarPlural.Infrastructure.Persistence;
 
-using Microsoft.AspNetCore.DataProtection;
-
-using Microsoft.AspNetCore.Identity;
-
-using Microsoft.EntityFrameworkCore;
-
-using RadarPlural.Api;
-
+// Program.cs só compõe a aplicação (arquitetura hexagonal):
+//   Domain         entidades, regras e portas (interfaces)
+//   Application    casos de uso
+//   Infrastructure adapters de saída (EF Core/PostgreSQL, hash de senha)
+//   Api            adapter de entrada (HTTP): este projeto
 var builder = WebApplication.CreateBuilder(args);
 
-// Plataformas de hospedagem informam a porta em PORT; localmente a API continua em localhost:5080.
+// Plataformas de hospedagem (Render, Kubernetes) informam a porta em PORT; localmente a API continua em localhost:5080.
 var port = Environment.GetEnvironmentVariable("PORT");
 builder.WebHost.UseUrls(string.IsNullOrWhiteSpace(port) ? "http://localhost:5080" : $"http://0.0.0.0:{port}");
 builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestBodySize = 32768);
 
-builder.Services.AddDbContext<AppDb>(o => o.UseNpgsql(DatabaseUrl.ToNpgsql(builder.Configuration.GetConnectionString("Default") ?? throw new InvalidOperationException("Configure ConnectionStrings__Default para PostgreSQL."))));
+// Em produção, log em JSON (uma linha por evento): é o formato que Kubernetes, Render e coletores de log leem.
+if (!builder.Environment.IsDevelopment())
+{
+    builder.Logging.ClearProviders();
+    builder.Logging.AddJsonConsole(o =>
+    {
+        o.IncludeScopes = true;
+        o.UseUtcTimestamp = true;
+        o.TimestampFormat = "yyyy-MM-ddTHH:mm:ss.fffZ";
+    });
+}
 
-// Chaves que protegem o cookie ficam no banco: reinício ou novo deploy do container não derruba as sessões.
-builder.Services.AddDataProtection().PersistKeysToDbContext<AppDb>().SetApplicationName("coreletter");
+builder.Services.AddApplication();
+builder.Services.AddInfrastructure(builder.Configuration);
 
-builder.Services.AddSingleton<IPasswordHasher<Member>, PasswordHasher<Member>>();
+// Todo erro sai como ProblemDetails (RFC 9457) com "error" (contrato do front) e "traceId" (para achar o log).
+builder.Services.AddProblemDetails(o => o.CustomizeProblemDetails = ctx =>
+{
+    var problem = ctx.ProblemDetails;
+    problem.Extensions.TryAdd("error", problem.Detail ?? ProblemMessages.For(problem.Status));
+    problem.Extensions.TryAdd("traceId", Activity.Current?.Id ?? ctx.HttpContext.TraceIdentifier);
+});
+builder.Services.AddOpenApi();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(o =>
 {
@@ -33,50 +49,30 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     o.Cookie.SameSite = SameSiteMode.Strict;
     o.Cookie.SecurePolicy = builder.Environment.IsDevelopment() ? CookieSecurePolicy.SameAsRequest : CookieSecurePolicy.Always;
     o.ExpireTimeSpan = TimeSpan.FromHours(8);
-    o.Events.OnRedirectToLogin = c =>
-    {
-        c.Response.StatusCode = 401;
-        return Task.CompletedTask;
-    };
-    o.Events.OnRedirectToAccessDenied = c =>
-    {
-        c.Response.StatusCode = 403;
-        return Task.CompletedTask;
-    };
+    // API não redireciona para página de login: devolve o status e o front decide.
+    o.Events.OnRedirectToLogin = c => { c.Response.StatusCode = StatusCodes.Status401Unauthorized; return Task.CompletedTask; };
+    o.Events.OnRedirectToAccessDenied = c => { c.Response.StatusCode = StatusCodes.Status403Forbidden; return Task.CompletedTask; };
 });
-
 builder.Services.AddAuthorization();
-// Limite por IP configurável (RateLimit__PermitLimit); os testes de integração sobem o valor para não esbarrar no 429.
-var permitLimit = builder.Configuration.GetValue("RateLimit:PermitLimit", 60);
-builder.Services.AddRateLimiter(options =>
-{
-    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-    options.AddPolicy("api", context =>
-        System.Threading.RateLimiting.RateLimitPartition.GetFixedWindowLimiter(
-            context.Connection.RemoteIpAddress?.ToString() ?? "local",
-            _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
-            {
-                PermitLimit = permitLimit,
-                Window = TimeSpan.FromMinutes(1),
-                QueueLimit = 0
-            }));
-});
+builder.Services.AddApiRateLimiting(builder.Configuration);
 
 var app = builder.Build();
 
-// Reject browser cross-origin mutations, including requests made with same-site cookies.
-app.Use(async (context, next) =>
+// "dotnet RadarPlural.Api.dll --migrate": aplica as migrações e encerra.
+// No Kubernetes isso roda num initContainer, antes das réplicas subirem, em vez de cada réplica migrar ao iniciar.
+if (args.Contains("--migrate"))
 {
-    if (context.Request.Method is not ("GET" or "HEAD" or "OPTIONS") && context.Request.Headers.TryGetValue("Origin", out var origins))
-    {
-        if (!Uri.TryCreate(origins.ToString(), UriKind.Absolute, out var origin) || origin.Authority != context.Request.Host.Value)
-        {
-            context.Response.StatusCode = 403;
-            return;
-        }
-    }
-    await next();
-});
+    await DatabaseInitializer.InitializeAsync(app.Services, app.Configuration);
+    return;
+}
+if (app.Configuration.GetValue("Database:MigrateOnStartup", true))
+    await DatabaseInitializer.InitializeAsync(app.Services, app.Configuration);
+
+app.UseExceptionHandler(); // 500 sem stack trace para o cliente; detalhe vai para o log
+app.UseStatusCodePages();  // 401/403/404/429 sem corpo também viram ProblemDetails
+if (!app.Environment.IsDevelopment()) app.UseHsts();
+app.UseMiddleware<SecurityHeaders>();
+app.UseMiddleware<OriginGuard>();
 
 // Em produção o build Angular é copiado para wwwroot: front e API na mesma origem, sem CORS.
 app.UseDefaultFiles();
@@ -86,172 +82,25 @@ app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Migrações versionadas em todos os ambientes; o administrador é promovido só se a conta já existir.
+// Documentação OpenAPI: /openapi/v1.json e interface em /swagger. Ligada em desenvolvimento ou com OpenApi__Enabled=true.
+if (app.Environment.IsDevelopment() || app.Configuration.GetValue("OpenApi:Enabled", false))
 {
-    using var scope = app.Services.CreateScope();
-    var db = scope.ServiceProvider.GetRequiredService<AppDb>();
-    await db.Database.MigrateAsync();
-    var adminEmail = builder.Configuration["BootstrapAdminEmail"];
-    if (!string.IsNullOrWhiteSpace(adminEmail))
+    app.MapOpenApi();
+    app.UseSwaggerUI(o =>
     {
-        var admin = await db.Members.SingleOrDefaultAsync(x => x.Email == adminEmail.ToLowerInvariant());
-        if (admin is not null)
-        {
-            admin.IsAdmin = true;
-            await db.SaveChangesAsync();
-        }
-    }
+        o.SwaggerEndpoint("/openapi/v1.json", "Coreletter API v1");
+        o.DocumentTitle = "Coreletter API";
+    });
 }
-app.MapGet("/api/health", () => Results.Ok(new { status = "ok" }));
 
-app.MapPost("/api/auth/register", async (RegisterInput input, AppDb db, IPasswordHasher<Member> hasher, HttpContext ctx) =>
-{
-    var email = input.Email?.Trim().ToLowerInvariant() ?? "";
-    if (email.Length > 254 || !System.Net.Mail.MailAddress.TryCreate(email, out var address) || address.Address != email || string.IsNullOrWhiteSpace(input.DisplayName) || input.DisplayName.Length > 80 || input.Password is null || input.Password.Length < 10 || input.Password.Length > 128) return Error("Informe e-mail, nome (até 80) e senha de 10 a 128 caracteres.");
-    if (await db.Members.AnyAsync(x => x.Email == email)) return Error("Não foi possível cadastrar esse e-mail.");
-    var user = new Member { Email = email, DisplayName = input.DisplayName.Trim() };
-    user.PasswordHash = hasher.HashPassword(user, input.Password);
-    db.Members.Add(user);
-    try
-    {
-        await db.SaveChangesAsync();
-    }
-    catch (DbUpdateException)
-    {
-        return Error("Não foi possível cadastrar esse e-mail.");
-    }
-    await SignIn(ctx, user);
-    return Results.Ok(UserDto(user));
-}).RequireRateLimiting("api");
-
-app.MapPost("/api/auth/login", async (LoginInput input, AppDb db, IPasswordHasher<Member> hasher, HttpContext ctx) =>
-{
-    var user = await db.Members.SingleOrDefaultAsync(x => x.Email == (input.Email ?? "").Trim().ToLowerInvariant());
-    if (user is null || input.Password is null || input.Password.Length > 128 || hasher.VerifyHashedPassword(user, user.PasswordHash, input.Password) == PasswordVerificationResult.Failed) return Results.Json(new { error = "Credenciais inválidas." }, statusCode: 401);
-    await SignIn(ctx, user);
-    return Results.Ok(UserDto(user));
-}).RequireRateLimiting("api");
-
-app.MapPost("/api/auth/logout", async (HttpContext ctx) =>
-{
-    await ctx.SignOutAsync();
-    return Results.NoContent();
-}).RequireAuthorization().RequireRateLimiting("api");
-
-app.MapGet("/api/auth/me", async (HttpContext ctx, AppDb db) =>
-{
-    var user = await db.Members.FindAsync(Id(ctx));
-    return user is null ? Results.Unauthorized() : Results.Ok(UserDto(user));
-}).RequireAuthorization().RequireRateLimiting("api");
-
-app.MapGet("/api/posts", async (HttpContext ctx, AppDb db, int page = 1, int pageSize = 20, string? topic = null, string? type = null) =>
-{
-    if (page < 1 || page > 1000000) return Error("Página deve estar entre 1 e 1000000.");
-    pageSize = Math.Clamp(pageSize, 1, 50);
-    var q = db.Posts.AsNoTracking().Where(x => !x.Hidden);
-    if (!string.IsNullOrWhiteSpace(topic)) q = q.Where(x => x.Topic.ToLower().Contains(topic.ToLower()));
-    if (!string.IsNullOrWhiteSpace(type)) q = q.Where(x => x.Type == type);
-    var total = await q.CountAsync();
-    var posts = await q.OrderByDescending(x => x.CreatedAt).ThenByDescending(x => x.Id).Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
-    var memberId = ctx.User.Identity?.IsAuthenticated == true ? Id(ctx) : Guid.Empty;
-    var postIds = posts.Select(x => x.Id).ToList();
-    var saved = await db.Saved.Where(x => x.MemberId == memberId && postIds.Contains(x.PostId)).Select(x => x.PostId).ToListAsync();
-    return Results.Ok(new { items = posts.Select(p => PostDto(p, saved.Contains(p.Id))), page, pageSize, total });
-});
-
-// Notícias coletadas automaticamente das fontes aprovadas (RadarPlural.Worker). Leitura pública.
-app.MapGet("/api/news", async (AppDb db, int page = 1, int pageSize = 20, string? topic = null, string? source = null) =>
-{
-    if (page < 1 || page > 1000000) return Error("Página deve estar entre 1 e 1000000.");
-    pageSize = Math.Clamp(pageSize, 1, 50);
-    var q = db.FeedItems.AsNoTracking();
-    if (!string.IsNullOrWhiteSpace(topic)) q = q.Where(x => x.Topic == topic.Trim().ToLower());
-    if (!string.IsNullOrWhiteSpace(source)) q = q.Where(x => x.SourceId == source.Trim());
-    var total = await q.CountAsync();
-    var items = await q.OrderByDescending(x => x.PublishedAt ?? x.CollectedAt).ThenByDescending(x => x.Id)
-        .Skip((page - 1) * pageSize).Take(pageSize)
-        .Select(x => new { x.Id, x.SourceId, x.SourceName, x.Topic, x.Url, x.Title, x.Summary, x.PublishedAt, x.CollectedAt })
-        .ToListAsync();
-    return Results.Ok(new { items, page, pageSize, total });
-}).RequireRateLimiting("api");
-
-app.MapGet("/api/posts/saved", async (HttpContext ctx, AppDb db) =>
-{
-    var memberId = Id(ctx);
-    var posts = await db.Posts.AsNoTracking().Where(x => !x.Hidden && db.Saved.Any(s => s.PostId == x.Id && s.MemberId == memberId)).OrderByDescending(x => x.CreatedAt).ThenByDescending(x => x.Id).Take(100).ToListAsync();
-    return Results.Ok(new { items = posts.Select(p => PostDto(p, true)), page = 1, pageSize = 100, total = posts.Count });
-}).RequireAuthorization().RequireRateLimiting("api");
-
-app.MapPost("/api/posts", async (PostInput input, HttpContext ctx, AppDb db) =>
-{
-    if (!Rules.ValidUrl(input.Url) || input.Url.Length > 2048 || string.IsNullOrWhiteSpace(input.Title) || input.Title.Length > 180 || string.IsNullOrWhiteSpace(input.Topic) || input.Topic.Length > 60 || input.Type is not ("article" or "podcast" or "music") || (input.Comment?.Length ?? 0) > 2000) return Error("Link http(s), título (180), tema (60), tipo válido e comentário (2000) são necessários.");
-    var user = await db.Members.FindAsync(Id(ctx));
-    if (user is null) return Results.Unauthorized();
-    var post = new Post { Url = input.Url.Trim(), Title = input.Title.Trim(), Topic = input.Topic.Trim(), Type = input.Type, Comment = input.Comment?.Trim() ?? "", AuthorId = user.Id, AuthorName = user.DisplayName };
-    db.Posts.Add(post);
-    await db.SaveChangesAsync();
-    return Results.Created($"/api/posts/{post.Id}", PostDto(post, false));
-}).RequireAuthorization().RequireRateLimiting("api");
-
-app.MapDelete("/api/posts/{id:guid}", async (Guid id, HttpContext ctx, AppDb db) =>
-{
-    var post = await db.Posts.FindAsync(id);
-    if (post is null) return Results.NotFound();
-    if (post.AuthorId != Id(ctx)) return Results.Forbid();
-    db.Posts.Remove(post);
-    await db.SaveChangesAsync();
-    return Results.NoContent();
-}).RequireAuthorization().RequireRateLimiting("api");
-
-app.MapPut("/api/posts/{id:guid}/save", async (Guid id, HttpContext ctx, AppDb db) =>
-{
-    if (!await db.Posts.AnyAsync(x => x.Id == id && !x.Hidden)) return Results.NotFound();
-    var memberId = Id(ctx);
-    await db.Database.ExecuteSqlInterpolatedAsync($"INSERT INTO \"Saved\" (\"MemberId\", \"PostId\") VALUES ({memberId}, {id}) ON CONFLICT DO NOTHING");
-    return Results.NoContent();
-}).RequireAuthorization().RequireRateLimiting("api");
-
-app.MapDelete("/api/posts/{id:guid}/save", async (Guid id, HttpContext ctx, AppDb db) =>
-{
-    var memberId = Id(ctx);
-    await db.Saved.Where(x => x.PostId == id && x.MemberId == memberId).ExecuteDeleteAsync();
-    return Results.NoContent();
-}).RequireAuthorization().RequireRateLimiting("api");
-
-app.MapPost("/api/posts/{id:guid}/reports", async (Guid id, ReportInput input, HttpContext ctx, AppDb db) =>
-{
-    if (string.IsNullOrWhiteSpace(input.Reason) || input.Reason.Length > 1000) return Error("Informe motivo de até 1000 caracteres.");
-    if (!await db.Posts.AnyAsync(x => x.Id == id && !x.Hidden)) return Results.NotFound();
-    db.Reports.Add(new Report { PostId = id, MemberId = Id(ctx), Reason = input.Reason.Trim() });
-    await db.SaveChangesAsync();
-    return Results.NoContent();
-}).RequireAuthorization().RequireRateLimiting("api");
-
-app.MapGet("/api/moderation/reports", async (AppDb db) => Results.Ok(await db.Reports.AsNoTracking().OrderByDescending(x => x.CreatedAt).ThenByDescending(x => x.Id).Take(100).Select(x => new { x.Id, x.PostId, x.Reason, x.CreatedAt }).ToListAsync())).RequireAuthorization(p => p.RequireRole("admin"));
-
-app.MapPut("/api/moderation/posts/{id:guid}/hide", async (Guid id, AppDb db) =>
-{
-    var post = await db.Posts.FindAsync(id);
-    if (post is null) return Results.NotFound();
-    post.Hidden = true;
-    await db.SaveChangesAsync();
-    return Results.NoContent();
-}).RequireAuthorization(p => p.RequireRole("admin"));
+app.MapGroup("/api")
+    .MapHealth()
+    .MapAuth()
+    .MapPosts()
+    .MapNews()
+    .MapModeration();
 
 app.Run();
 
-static Guid Id(HttpContext ctx) => Guid.Parse(ctx.User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-
-static object UserDto(Member user) => new { user.Id, user.Email, user.DisplayName, user.IsAdmin };
-
-static object PostDto(Post p, bool saved) => new { p.Id, p.Url, p.Title, p.Topic, p.Type, p.Comment, p.AuthorId, p.AuthorName, p.CreatedAt, isSaved = saved };
-
-static IResult Error(string message) => Results.BadRequest(new { error = message });
-
-static Task SignIn(HttpContext ctx, Member user)
-{
-    var claims = new List<Claim> { new(ClaimTypes.NameIdentifier, user.Id.ToString()), new(ClaimTypes.Name, user.DisplayName) };
-    if (user.IsAdmin) claims.Add(new(ClaimTypes.Role, "admin"));
-    return ctx.SignInAsync(new ClaimsPrincipal(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme)));
-}
-public partial class Program { }
+// Exposto para os testes de integração (WebApplicationFactory<Program>).
+public partial class Program;

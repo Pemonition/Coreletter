@@ -1,9 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 
@@ -19,7 +16,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\RadarPlural.Api\RadarPlural.Api.csproj" />
+    <ProjectReference Include="..\RadarPlural.Application\RadarPlural.Application.csproj" />
+    <ProjectReference Include="..\RadarPlural.Infrastructure\RadarPlural.Infrastructure.csproj" />
     <ProjectReference Include="..\RadarPlural.Ingestion\RadarPlural.Ingestion.csproj" />
   </ItemGroup>
 

@@ -2,21 +2,18 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using RadarPlural.Api;
+using RadarPlural.Infrastructure.Persistence;
 
 #nullable disable
 
-namespace RadarPlural.Api.Migrations
+namespace RadarPlural.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AppDb))]
-    [Migration("20261027230554_Inicial")]
-    partial class Inicial
+    partial class AppDbModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -44,7 +41,59 @@ namespace RadarPlural.Api.Migrations
                     b.ToTable("DataProtectionKeys");
                 });
 
-            modelBuilder.Entity("RadarPlural.Api.Member", b =>
+            modelBuilder.Entity("RadarPlural.Domain.News.FeedItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CollectedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("PublishedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("SourceId")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("SourceName")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<string>("Summary")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<string>("Topic")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SourceId");
+
+                    b.HasIndex("Url")
+                        .IsUnique();
+
+                    b.ToTable("FeedItems");
+                });
+
+            modelBuilder.Entity("RadarPlural.Domain.Members.Member", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -73,7 +122,7 @@ namespace RadarPlural.Api.Migrations
                     b.ToTable("Members");
                 });
 
-            modelBuilder.Entity("RadarPlural.Api.Post", b =>
+            modelBuilder.Entity("RadarPlural.Domain.Posts.Post", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -117,7 +166,7 @@ namespace RadarPlural.Api.Migrations
                     b.ToTable("Posts");
                 });
 
-            modelBuilder.Entity("RadarPlural.Api.Report", b =>
+            modelBuilder.Entity("RadarPlural.Domain.Posts.Report", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -143,7 +192,7 @@ namespace RadarPlural.Api.Migrations
                     b.ToTable("Reports");
                 });
 
-            modelBuilder.Entity("RadarPlural.Api.SavedPost", b =>
+            modelBuilder.Entity("RadarPlural.Domain.Posts.SavedPost", b =>
                 {
                     b.Property<Guid>("MemberId")
                         .HasColumnType("uuid");
@@ -158,18 +207,18 @@ namespace RadarPlural.Api.Migrations
                     b.ToTable("Saved");
                 });
 
-            modelBuilder.Entity("RadarPlural.Api.Report", b =>
+            modelBuilder.Entity("RadarPlural.Domain.Posts.Report", b =>
                 {
-                    b.HasOne("RadarPlural.Api.Post", null)
+                    b.HasOne("RadarPlural.Domain.Posts.Post", null)
                         .WithMany()
                         .HasForeignKey("PostId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("RadarPlural.Api.SavedPost", b =>
+            modelBuilder.Entity("RadarPlural.Domain.Posts.SavedPost", b =>
                 {
-                    b.HasOne("RadarPlural.Api.Post", null)
+                    b.HasOne("RadarPlural.Domain.Posts.Post", null)
                         .WithMany()
                         .HasForeignKey("PostId")
                         .OnDelete(DeleteBehavior.Cascade)

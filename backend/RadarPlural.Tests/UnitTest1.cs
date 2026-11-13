@@ -1,4 +1,6 @@
-using RadarPlural.Api;
+using RadarPlural.Domain.Billing;
+using RadarPlural.Domain.Members;
+using RadarPlural.Domain.Posts;
 
 namespace RadarPlural.Tests;
 
@@ -12,7 +14,7 @@ public class DomainTests
     [InlineData("file:///etc/passwd", false)]
     [InlineData("https://user:secret@example.org", false)]
     [InlineData("/relative", false)]
-    public void SharedLinksOnlyAllowAbsoluteHttpWithoutCredentials(string value, bool expected) => Assert.Equal(expected, Rules.ValidUrl(value));
+    public void SharedLinksOnlyAllowAbsoluteHttpWithoutCredentials(string value, bool expected) => Assert.Equal(expected, LinkRules.ValidUrl(value));
 
     [Fact]
     public void RepeatingRequestDoesNotConsumeQuotaTwice()
@@ -61,12 +63,12 @@ public class FinancialTests
     [Fact]
     public void PlanReservesRequiredContribution()
     {
-        Assert.Equal(6.96m, RadarPlural.Api.FinancialRules.AiBudget(29.90m, 5m, 0.6m));
+        Assert.Equal(6.96m, FinancialRules.AiBudget(29.90m, 5m, 0.6m));
     }
     [Fact]
     public void BudgetRoundsDownToAvoidOverspend()
     {
-        Assert.Equal(0.33m, RadarPlural.Api.FinancialRules.AiBudget(1m, 0m, 0.666m));
+        Assert.Equal(0.33m, FinancialRules.AiBudget(1m, 0m, 0.666m));
     }
     [Theory]
     [InlineData(-1, 0, 0)]
@@ -75,22 +77,22 @@ public class FinancialTests
     [InlineData(1, 0, -1)]
     public void InvalidPlanRejected(decimal price, decimal other, decimal rate)
     {
-        Assert.Throws<ArgumentOutOfRangeException>(() => RadarPlural.Api.FinancialRules.AiBudget(price, other, rate));
+        Assert.Throws<ArgumentOutOfRangeException>(() => FinancialRules.AiBudget(price, other, rate));
     }
     [Fact]
     public void UnfundedPlanRejected()
     {
-        Assert.Throws<ArgumentException>(() => RadarPlural.Api.FinancialRules.AiBudget(1m, 2m, 0m));
+        Assert.Throws<ArgumentException>(() => FinancialRules.AiBudget(1m, 2m, 0m));
     }
     [Fact]
     public void ContributionIsDistinctFromResult()
     {
-        Assert.Equal((209m, 109m), RadarPlural.Api.FinancialRules.Period(299m, 50m, 40m, 100m));
+        Assert.Equal((209m, 109m), FinancialRules.Period(299m, 50m, 40m, 100m));
     }
     [Fact]
     public void LossMustRemainVisible()
     {
-        Assert.Equal((-2m, -7m), RadarPlural.Api.FinancialRules.Period(3m, 2m, 3m, 5m));
+        Assert.Equal((-2m, -7m), FinancialRules.Period(3m, 2m, 3m, 5m));
     }
 }
 
@@ -100,8 +102,8 @@ public class AuthenticationPrimitiveTests
     [Fact]
     public void PasswordHashesAreSaltedAndRejectWrongPassword()
     {
-        var hasher = new Microsoft.AspNetCore.Identity.PasswordHasher<RadarPlural.Api.Member>();
-        var member = new RadarPlural.Api.Member();
+        var hasher = new Microsoft.AspNetCore.Identity.PasswordHasher<Member>();
+        var member = new Member();
         const string password = "fixture-password-for-tests";
         var first = hasher.HashPassword(member, password);
         var second = hasher.HashPassword(member, password);

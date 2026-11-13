@@ -20,7 +20,7 @@ public sealed class PostgresFixture : IAsyncLifetime
         var external = Environment.GetEnvironmentVariable("INTEGRATION_DATABASE_URL");
         if (string.IsNullOrWhiteSpace(external))
         {
-            container = new PostgreSqlBuilder().WithImage("postgres:17-alpine").Build();
+            container = new PostgreSqlBuilder("postgres:17-alpine").Build();
             await container.StartAsync();
             ConnectionString = container.GetConnectionString();
             return;
