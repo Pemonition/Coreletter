@@ -1,6 +1,9 @@
 # Overlay para cluster local (Kubernetes do Docker Desktop ou kind). Veja k8s/README.md.
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+# Precisa repetir o namespace aqui: sem ele o Secret gerado neste overlay fica fora de "coreletter"
+# e o kustomize não troca as referências para o nome com hash (coreletter-secrets-<hash>).
+namespace: coreletter
 resources:
   - ../../base
 images:

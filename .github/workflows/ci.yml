@@ -123,6 +123,7 @@ jobs:
       - name: Diagnóstico do cluster
         if: failure()
         run: |
-          kubectl -n coreletter get all,events --sort-by=.lastTimestamp || true
+          kubectl -n coreletter get all || true
+          kubectl -n coreletter get events --sort-by=.metadata.creationTimestamp || true
           kubectl -n coreletter describe pods || true
           kubectl -n coreletter logs -l app.kubernetes.io/name=coreletter-api --all-containers --tail=100 || true
