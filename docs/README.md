@@ -36,6 +36,7 @@ Regra de dependência: domínio e aplicação não conhecem banco nem web. Quem 
 | 0002 | Política de ingestão: só RSS/Atom de fontes aprovadas, travas de segurança |
 | 0003 | Pipeline: triagem por regras, auditor separado do roteirista, vídeo por história (PR #24) |
 | 0004 | Escala desde o MVP: sem estado, fila com `SKIP LOCKED`, migração única, teto de custo |
+| 0005 | Catálogo único e curado de fontes: área, idioma, tipo e motivo por fonte; validação a partir de data center; história só com veículos diferentes |
 
 ## Contratos
 `backend/API.md` (HTTP) e `contratos/comparacao-v1.md` (comparação B04, PR #24).
