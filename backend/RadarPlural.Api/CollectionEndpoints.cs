@@ -9,7 +9,7 @@ public static class CollectionEndpoints
     {
         var group = app.MapGroup("/api/collections").RequireAuthorization().RequireRateLimiting("api");
         group.MapGet("/sources", (IOptions<CollectionOptions> options) => Results.Ok(
-            (options.Value.Enabled ? options.Value.Sources : []).Where(s => s.Approved && CollectionRules.ValidSourceUrl(s.Url))
+            options.Value.Sources.Where(s => s.Approved && CollectionRules.ValidSourceUrl(s.Url))
                 .Select(s => new { s.Id, s.Name, s.Language })));
         group.MapGet("/profile", async (AppDb db, HttpContext ctx, CancellationToken ct) =>
             Results.Ok(await db.CollectionProfiles.AsNoTracking().SingleOrDefaultAsync(x => x.MemberId == Auth.Id(ctx), ct)));
