@@ -9,7 +9,7 @@ namespace RadarPlural.Api;
 
 public sealed record CollectionInput(string? Topic, string[]? Keywords, string[]? ExcludedKeywords,
     string[]? SourceIds, int IntervalHours, int MaxItems, bool Enabled);
-public sealed record FeedSource(string Id, string Name, string Url, string Language, bool Approved = false);
+public sealed record FeedSource(string Id, string Name, string Url, string Language, bool Approved = false, string Category = "Geral", string SourceType = "não classificada");
 public sealed class CollectionOptions
 {
     public bool Enabled { get; set; }

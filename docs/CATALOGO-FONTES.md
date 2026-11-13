@@ -11,7 +11,7 @@ Seleção inicial delegada por Hugo e preparada com assistência em 12/11/2026; 
 
 Os quatro feeds responderam HTTP 200 com RSS válido na checagem técnica desta sessão. Isso não comprova estabilidade futura, autorização ampla de republicação, ausência de viés ou veracidade de cada notícia. Guardar títulos/trechos limitados e links; revisar termos antes de distribuição pública ou uso comercial. Não copiar matérias, imagens ou ultrapassar paywalls.
 
-Nature também respondeu, mas usa RSS 1.0/RDF; permanece fora do catálogo ativo até validar suporte no parser. Guardian fica como candidato, com restrições de uso do feed a revisar. Reuters/AP/Financial Times podem ser candidatos editoriais futuros, sem inventar feed gratuito nem contornar licenciamento. A seleção inicial é pequena, com viés anglófono e institucional conhecido; ampliar regiões e jornalismo independente é uma tarefa editorial, não automática.
+Nature usa RSS 1.0/RDF, formato que o parser atual suporta por nomes locais dos elementos; foi incluída na ampliação. Guardian fica como candidato, com restrições de uso do feed a revisar. Reuters/AP/Financial Times podem ser candidatos editoriais futuros, sem inventar feed gratuito nem contornar licenciamento. A seleção inicial é pequena, com viés anglófono e institucional conhecido; ampliar regiões e jornalismo independente é uma tarefa editorial, não automática.
 
 ## Controle disponível para a equipe
 
@@ -34,3 +34,26 @@ Catálogo preenchido e fontes inicialmente aprovadas; o interruptor global `Coll
 ## Próxima versão sugerida
 
 Painel exclusivo de administrador com lista, proposta/aprovação/desativação, justificativa obrigatória, trilha de quem alterou e data, controle de concorrência e testes 401/403. A aprovação deve ser feita por pessoa autorizada e não por classificação automática de IA. Preservar origem, diversidade e opção de revisão/correção; não chamar esta versão por arquivo de painel já implementado.
+
+## Catálogo ampliado por área — 12/11/2026
+
+Área e tipo estão disponíveis como category e sourceType no endpoint de fontes. A interface atual pode ignorar esses campos até a revisão visual.
+
+| Área | Fonte | Idioma | Tipo | Feed oficial |
+|---|---|---|---|---|
+| Tecnologia | BBC News — Tecnologia | en | jornalismo | https://feeds.bbci.co.uk/news/technology/rss.xml |
+| Espaço | NASA — Ciência e espaço (institucional) | en | institucional | https://www.nasa.gov/feed/ |
+| Inteligência artificial | MIT News — IA (institucional) | en | institucional | https://news.mit.edu/rss/topic/artificial-intelligence2 |
+| Mundo e Brasil | Agência Brasil — Últimas notícias | pt | agência pública | https://agenciabrasil.ebc.com.br/rss/ultimasnoticias/feed.xml |
+| Tecnologia | Tecnoblog | pt | jornalismo | https://tecnoblog.net/feed/ |
+| Tecnologia | Ars Technica | en | jornalismo | https://feeds.arstechnica.com/arstechnica/index |
+| Ciência | ScienceDaily | en | divulgação | https://www.sciencedaily.com/rss/all.xml |
+| Ciência | Nature — Pesquisa | en | publicação científica | https://www.nature.com/nature.rss |
+| Ciência | BBC — Ciência e ambiente | en | jornalismo | https://feeds.bbci.co.uk/news/science_and_environment/rss.xml |
+| Inteligência artificial | Le Monde — IA | en | jornalismo | https://www.lemonde.fr/en/artificial-intelligence/rss_full.xml |
+| Mundo | BBC — Mundo | en | jornalismo | https://feeds.bbci.co.uk/news/world/rss.xml |
+| Mundo | DW — Mundo | en | jornalismo | https://rss.dw.com/rdf/rss-en-world |
+| Ciência | Radioagência — Pesquisa e inovação | pt | agência pública | https://agenciabrasil.ebc.com.br/radioagencia-nacional/rss/pesquisa-e-inovacao/feed.xml |
+| Espaço | Space.com | en | jornalismo | https://www.space.com/feeds/all |
+
+Todos os novos feeds incluídos retornaram HTTP 200 e itens RSS/RDF nesta sessão. A checagem técnica não revisa direitos de distribuição pública nem garante disponibilidade futura. ESA foi adiada por falha de validação do certificado nesta máquina; não houve contorno de TLS. O feed candidato MIT Ciência retornou 404 e foi excluído. Veículos de um mesmo grupo não contam como fontes independentes só por terem feeds diferentes. ScienceDaily agrega divulgação científica; Nature contém artigos e conteúdo com acesso limitado. Não transformar resumo de pesquisa em orientação médica ou conclusão científica definitiva.

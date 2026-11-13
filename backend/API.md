@@ -28,3 +28,5 @@ Todos os endpoints `/api/collections/*` exigem autenticação e rate limit da AP
 Status: `pending`, `paused`, `success`, `partial`, `failed`. `success` com lista vazia significa coleta válida sem correspondências; falha nunca equivale a ausência de novidades. Execução depende da API e banco ativos. Ver `docs/decisoes/0001-coleta-por-questionario.md` para fonte permitida, rede e esquema aditivo.
 
 O catálogo de fontes aprovadas em GET /api/collections/sources fica visível para usuários autenticados mesmo com a coleta global desligada. Ativar o radar continua bloqueado enquanto Collection:Enabled=false. A equipe altera aprovação por configuração versionada e reinicia a API; veja docs/CATALOGO-FONTES.md.
+
+Cada fonte inclui também category (área temática) e sourceType (jornalismo, institucional, divulgação etc.). Campos aditivos; não há agrupamento visual novo no frontend nesta alteração.

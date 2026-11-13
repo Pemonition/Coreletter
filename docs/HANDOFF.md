@@ -1,3 +1,7 @@
+## Ampliação por área — 12/11/2026
+
+Catálogo ampliado para 14 feeds em tecnologia, IA, ciência, espaço e mundo/Brasil. Novos campos opcionais Category/SourceType no FeedSource e retorno aditivo da API. Ver CATALOGO-FONTES.md para origens e limites. Cada feed novo retornou HTTP 200 com itens. Coleta global segue desligada; fontes individuais aprovadas. Frontend não editado. ID único e classificação completa verificados.
+
 ## Catálogo inicial — 12/11/2026
 
 BBC Tecnologia, NASA, MIT News IA e Agência Brasil adicionadas ao catálogo aprovado por seleção delegada de Hugo. Checagem de rede HTTP 200/RSS válida; NASA/MIT identificadas como institucionais. Coleta global permanece desativada; o catálogo aprovado agora pode ser consultado mesmo antes de habilitar a coleta. Script Set-SourceApproval.ps1 para equipe aprovar/desativar por Git com motivo registrado no commit; não é painel administrativo nem auditoria persistente. Reiniciar API após mudanças. Política e limites em CATALOGO-FONTES.md. Frontend do Claude não alterado.
