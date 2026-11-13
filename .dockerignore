@@ -8,3 +8,4 @@
 .env.*
 docs/
 scripts/
+k8s/

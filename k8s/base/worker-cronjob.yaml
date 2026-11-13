@@ -1,0 +1,47 @@
+# Coletor de notícias a cada 3 horas, dentro do cluster (mesmo horário do workflow ingestao.yml).
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: coreletter-worker
+  labels:
+    app.kubernetes.io/name: coreletter-worker
+spec:
+  schedule: "17 */3 * * *"
+  concurrencyPolicy: Forbid # se a coleta anterior ainda roda, não começa outra
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 1
+      activeDeadlineSeconds: 900 # 15 min; o Worker já se limita a 10 min internamente
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: coreletter-worker
+        spec:
+          restartPolicy: Never
+          securityContext:
+            runAsNonRoot: true
+            seccompProfile: { type: RuntimeDefault }
+          containers:
+            - name: worker
+              image: coreletter-worker
+              env:
+                - name: ConnectionStrings__Default
+                  valueFrom:
+                    secretKeyRef:
+                      name: coreletter-secrets
+                      key: ConnectionStrings__Default
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities: { drop: ["ALL"] }
+              resources:
+                requests: { cpu: 50m, memory: 96Mi }
+                limits: { memory: 256Mi }
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+          volumes:
+            - name: tmp
+              emptyDir: {}

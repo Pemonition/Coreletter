@@ -12,3 +12,6 @@
 TestResults/
 artifacts/
 .vs/
+
+# Segredos do cluster local (k8s/overlays/local/secrets.env.example é o modelo)
+k8s/**/secrets.env

@@ -1,0 +1,15 @@
+# Base do Coreletter no Kubernetes. Não contém segredo nem tag de imagem de ambiente:
+# isso vem do overlay (k8s/overlays/local para Docker Desktop/kind).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: coreletter
+labels:
+  - pairs:
+      app.kubernetes.io/part-of: coreletter
+    includeSelectors: false
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - postgres.yaml
+  - api.yaml
+  - worker-cronjob.yaml

@@ -1,0 +1,25 @@
+# Overlay para cluster local (Kubernetes do Docker Desktop ou kind). Veja k8s/README.md.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+images:
+  # Imagens construídas na própria máquina (docker build); não vêm de registro.
+  - name: coreletter-api
+    newName: coreletter-api
+    newTag: local
+  - name: coreletter-worker
+    newName: coreletter-worker
+    newTag: local
+# O Secret nasce do arquivo secrets.env (ignorado pelo Git). Copie de secrets.env.example e troque a senha.
+secretGenerator:
+  - name: coreletter-secrets
+    envs:
+      - secrets.env
+patches:
+  # Na demonstração local a documentação da API fica ligada.
+  - target: { kind: ConfigMap, name: coreletter-config }
+    patch: |-
+      - op: replace
+        path: /data/OpenApi__Enabled
+        value: "true"

@@ -1,0 +1,90 @@
+# API + front Angular (mesma imagem, mesma origem). Deployment = estado desejado: N cópias desta versão.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coreletter-api
+  labels:
+    app.kubernetes.io/name: coreletter-api
+spec:
+  replicas: 2 # duas cópias: se um pod cair, o outro continua atendendo
+  revisionHistoryLimit: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0 # nunca fica com menos cópias prontas do que o pedido durante a atualização
+      maxSurge: 1       # sobe uma cópia nova, espera ficar pronta, derruba uma antiga, repete
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: coreletter-api
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: coreletter-api
+    spec:
+      securityContext:
+        runAsNonRoot: true # a imagem já roda como $APP_UID (usuário sem privilégio)
+        seccompProfile: { type: RuntimeDefault }
+      initContainers:
+        # Aplica as migrações antes dos containers da API. O EF Core usa trava no banco, então dois
+        # initContainers simultâneos (duas réplicas) não aplicam a mesma migração duas vezes.
+        - name: migrate
+          image: coreletter-api
+          args: ["--migrate"]
+          envFrom:
+            - configMapRef: { name: coreletter-config }
+            - secretRef: { name: coreletter-secrets }
+          securityContext: &hardened
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: ["ALL"] }
+          resources: &resources
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { memory: 384Mi }
+          volumeMounts: &tmp
+            - name: tmp
+              mountPath: /tmp
+      containers:
+        - name: api
+          image: coreletter-api
+          ports:
+            - name: http
+              containerPort: 8080
+          envFrom:
+            - configMapRef: { name: coreletter-config }
+            - secretRef: { name: coreletter-secrets }
+          # startup: tolera a primeira subida lenta; liveness: o processo responde (sem banco, de propósito);
+          # readiness: só recebe tráfego do Service quem alcança o banco.
+          startupProbe:
+            httpGet: { path: /api/health, port: http }
+            periodSeconds: 2
+            failureThreshold: 30
+          livenessProbe:
+            httpGet: { path: /api/health, port: http }
+            periodSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet: { path: /api/health/ready, port: http }
+            periodSeconds: 5
+            failureThreshold: 2
+          securityContext: *hardened
+          resources: *resources
+          volumeMounts: *tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
+---
+# Service = endereço fixo na frente dos pods (que mudam de IP a cada recriação) e balanceamento entre as réplicas.
+apiVersion: v1
+kind: Service
+metadata:
+  name: coreletter-api
+  labels:
+    app.kubernetes.io/name: coreletter-api
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: coreletter-api
+  ports:
+    - name: http
+      port: 80
+      targetPort: http

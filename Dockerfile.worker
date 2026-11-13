@@ -1,0 +1,19 @@
+# Imagem do coletor de notícias (RadarPlural.Worker): roda uma vez e termina.
+# No Kubernetes é executada por um CronJob (k8s/base/worker-cronjob.yaml) no lugar do agendamento do GitHub Actions.
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+COPY backend/Directory.Build.props backend/
+COPY backend/RadarPlural.Ingestion/RadarPlural.Ingestion.csproj backend/RadarPlural.Ingestion/
+COPY backend/RadarPlural.Worker/RadarPlural.Worker.csproj backend/RadarPlural.Worker/
+RUN dotnet restore backend/RadarPlural.Worker/RadarPlural.Worker.csproj
+COPY backend/RadarPlural.Ingestion/ backend/RadarPlural.Ingestion/
+COPY backend/RadarPlural.Worker/ backend/RadarPlural.Worker/
+# O Worker compila o mesmo DatabaseUrl.cs da API (link no .csproj), sem depender do projeto inteiro.
+COPY backend/RadarPlural.Infrastructure/Persistence/DatabaseUrl.cs backend/RadarPlural.Infrastructure/Persistence/
+RUN dotnet publish backend/RadarPlural.Worker/RadarPlural.Worker.csproj -c Release -o /app --no-restore
+
+FROM mcr.microsoft.com/dotnet/runtime:10.0
+WORKDIR /app
+COPY --from=build /app .
+USER $APP_UID
+ENTRYPOINT ["dotnet", "RadarPlural.Worker.dll"]

@@ -1,0 +1,5 @@
+# Namespace separa o Coreletter de qualquer outra coisa no cluster (kubectl get all -n coreletter).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: coreletter

@@ -1,0 +1,14 @@
+# Configuração NÃO secreta, fora da imagem: a mesma imagem roda em qualquer ambiente.
+# Chaves com "__" viram seções do appsettings no .NET (Database__MigrateOnStartup = Database:MigrateOnStartup).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coreletter-config
+data:
+  ASPNETCORE_ENVIRONMENT: Production
+  PORT: "8080"
+  # As migrações rodam no initContainer, uma vez por rollout, e não em cada réplica ao iniciar.
+  Database__MigrateOnStartup: "false"
+  OpenApi__Enabled: "false"
+  # E-mail de uma conta JÁ cadastrada que deve virar administradora (vazio = ninguém é promovido).
+  BootstrapAdminEmail: ""
