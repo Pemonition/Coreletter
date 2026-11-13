@@ -1,0 +1,5 @@
+# Namespace isola o Coreletter dentro do cluster (aula 2, 09/11: dev, teste e produção separados).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: coreletter

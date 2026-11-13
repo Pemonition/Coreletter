@@ -302,20 +302,20 @@ public class SourceCatalogTests
     public void ValidCatalogLoadsAndExposesHostAllowlist()
     {
         var sources = SourceCatalog.Parse("""
-            [{ "id": "tecnoblog", "name": "Tecnoblog", "url": "https://tecnoblog.net/feed/", "topic": "tecnologia" },
-             { "id": "g1-tec", "name": "g1 Tecnologia", "url": "https://g1.globo.com/rss/g1/tecnologia/", "topic": "tecnologia" }]
+            [{ "id": "tecnoblog", "name": "Tecnoblog", "url": "https://tecnoblog.net/feed/", "topic": "tecnologia", "language": "pt", "kind": "jornalismo", "reason": "Fonte de teste com um motivo de escolha suficiente." },
+             { "id": "g1-tec", "name": "g1 Tecnologia", "url": "https://g1.globo.com/rss/g1/tecnologia/", "topic": "tecnologia", "language": "pt", "kind": "jornalismo", "reason": "Fonte de teste com um motivo de escolha suficiente." }]
             """);
         Assert.Equal(2, sources.Count);
         Assert.Equal(["g1.globo.com", "tecnoblog.net"], SourceCatalog.AllowedHosts(sources).Order());
     }
 
     [Theory]
-    [InlineData("""[{ "id": "a", "name": "A", "url": "http://example.org/feed", "topic": "t" }]""")]          // sem https
-    [InlineData("""[{ "id": "a", "name": "A", "url": "https://127.0.0.1/feed", "topic": "t" }]""")]          // IP literal
-    [InlineData("""[{ "id": "a", "name": "A", "url": "https://user:x@example.org/", "topic": "t" }]""")]     // credencial
-    [InlineData("""[{ "id": "A B", "name": "A", "url": "https://example.org/feed", "topic": "t" }]""")]      // id inválido
-    [InlineData("""[{ "id": "a", "name": "", "url": "https://example.org/feed", "topic": "t" }]""")]         // nome vazio
-    [InlineData("""[{ "id": "a", "name": "A", "url": "https://example.org/1", "topic": "t" }, { "id": "a", "name": "B", "url": "https://example.org/2", "topic": "t" }]""")] // id repetido
+    [InlineData("""[{ "id": "a", "name": "A", "url": "http://example.org/feed", "topic": "tecnologia", "language": "pt", "kind": "jornalismo", "reason": "Fonte de teste com um motivo de escolha suficiente." }]""")]          // sem https
+    [InlineData("""[{ "id": "a", "name": "A", "url": "https://127.0.0.1/feed", "topic": "tecnologia", "language": "pt", "kind": "jornalismo", "reason": "Fonte de teste com um motivo de escolha suficiente." }]""")]          // IP literal
+    [InlineData("""[{ "id": "a", "name": "A", "url": "https://user:x@example.org/", "topic": "tecnologia", "language": "pt", "kind": "jornalismo", "reason": "Fonte de teste com um motivo de escolha suficiente." }]""")]     // credencial
+    [InlineData("""[{ "id": "A B", "name": "A", "url": "https://example.org/feed", "topic": "tecnologia", "language": "pt", "kind": "jornalismo", "reason": "Fonte de teste com um motivo de escolha suficiente." }]""")]      // id inválido
+    [InlineData("""[{ "id": "a", "name": "", "url": "https://example.org/feed", "topic": "tecnologia", "language": "pt", "kind": "jornalismo", "reason": "Fonte de teste com um motivo de escolha suficiente." }]""")]         // nome vazio
+    [InlineData("""[{ "id": "a", "name": "A", "url": "https://example.org/1", "topic": "tecnologia", "language": "pt", "kind": "jornalismo", "reason": "Fonte de teste com um motivo de escolha suficiente." }, { "id": "a", "name": "B", "url": "https://example.org/2", "topic": "tecnologia", "language": "pt", "kind": "jornalismo", "reason": "Fonte de teste com um motivo de escolha suficiente." }]""")] // id repetido
     [InlineData("[]")]
     [InlineData("{")]
     public void InvalidCatalogIsRejected(string json) => Assert.Throws<IngestionException>(() => SourceCatalog.Parse(json));
@@ -353,5 +353,55 @@ public class IngestionHardeningTests
         var allowed = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "localhost" };
         var error = await Assert.ThrowsAsync<IngestionException>(() => fetcher.FetchAsync(new Uri("http://localhost/feed"), allowed));
         Assert.Contains("não público", error.Message);
+    }
+}
+
+// Curadoria humana como regra (docs/PROPOSTA.md, compromisso 2): toda fonte precisa dizer idioma, tipo e POR QUE foi escolhida.
+public class SourceCurationTests
+{
+    private const string Valida = """{ "id": "a", "name": "A", "url": "https://example.org/feed", "topic": "ciencia", "language": "pt", "kind": "universidade", "reason": "Jornal de universidade pública com fontes citadas." }""";
+
+    [Fact]
+    public void ValidSourceKeepsLanguageKindAndReason()
+    {
+        var s = Assert.Single(SourceCatalog.Parse($"[{Valida}]"));
+        Assert.Equal("pt", s.Language);
+        Assert.Equal("universidade", s.Kind);
+        Assert.Equal("Jornal de universidade pública com fontes citadas.", s.Reason);
+        Assert.Equal("ciencia", s.Topic);
+    }
+
+    [Theory]
+    [InlineData("\"language\": \"pt\", ", "language")]           // sem idioma
+    [InlineData("\"kind\": \"universidade\", ", "kind")]         // sem tipo
+    [InlineData("\"reason\": \"Jornal de universidade pública com fontes citadas.\"", "reason")] // sem motivo
+    public void MissingCurationFieldIsRejectedNamingTheField(string remover, string campo)
+    {
+        var json = "[" + Valida.Replace(remover, "").Replace(", }", " }") + "]";
+        var e = Assert.Throws<IngestionException>(() => SourceCatalog.Parse(json));
+        Assert.Contains(campo, e.Message);
+    }
+
+    [Theory]
+    [InlineData("\"topic\": \"ciencia\"", "\"topic\": \"esportes\"", "área")]        // área fora da lista
+    [InlineData("\"language\": \"pt\"", "\"language\": \"portugues\"", "idioma")]     // idioma fora do formato
+    [InlineData("\"kind\": \"universidade\"", "\"kind\": \"influenciador\"", "tipo")] // tipo fora da lista
+    [InlineData("\"Jornal de universidade pública com fontes citadas.\"", "\"Boa.\"", "motivo")] // motivo curto demais
+    public void CurationValuesOutsideTheRulesAreRejected(string de, string para, string trecho)
+    {
+        var e = Assert.Throws<IngestionException>(() => SourceCatalog.Parse("[" + Valida.Replace(de, para) + "]"));
+        Assert.Contains(trecho, e.Message);
+    }
+
+    [Fact]
+    public void TheRealCatalogIsValidAndEveryAreaHasASourceInPortuguese()
+    {
+        var path = Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "RadarPlural.Worker", "fontes.json");
+        var fontes = SourceCatalog.Parse(File.ReadAllText(path));
+        Assert.Equal(SourceCatalog.Areas.Keys.OrderBy(x => x), fontes.Select(f => f.Topic).Distinct().OrderBy(x => x));
+        foreach (var area in SourceCatalog.Areas.Keys)
+            Assert.Contains(fontes, f => f.Topic == area && f.Language == "pt");
+        // Produto brasileiro e agrupamento por palavras: a maioria precisa estar em português para haver comparação.
+        Assert.True(fontes.Count(f => f.Language == "pt") * 4 >= fontes.Count * 3, "pelo menos 75% das fontes em português");
     }
 }

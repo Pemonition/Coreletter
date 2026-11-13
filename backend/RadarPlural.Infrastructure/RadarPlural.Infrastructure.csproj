@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\RadarPlural.Pipeline\RadarPlural.Pipeline.csproj" />
+    <ProjectReference Include="..\RadarPlural.Ingestion\RadarPlural.Ingestion.csproj" />
+    <ProjectReference Include="..\RadarPlural.Domain\RadarPlural.Domain.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Npgsql" Version="10.0.0" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>

@@ -11,7 +11,32 @@ public static partial class SourceCatalog
     [GeneratedRegex("^[a-z0-9][a-z0-9-]{0,63}$")]
     private static partial Regex IdPattern();
 
-    private sealed record Row(string? Id, string? Name, string? Url, string? Topic);
+    // Áreas do catálogo (o tema de cada fonte). Nome técnico → nome para mostrar na tela.
+    public static readonly IReadOnlyDictionary<string, string> Areas = new Dictionary<string, string>
+    {
+        ["tecnologia"] = "Tecnologia",
+        ["ia"] = "Inteligência artificial",
+        ["ciencia"] = "Ciência",
+        ["espaco"] = "Espaço",
+        ["curiosidades"] = "Curiosidades",
+        ["brasil-e-mundo"] = "Brasil e mundo",
+        ["economia"] = "Economia",
+    };
+
+    // Tipo de fonte: contexto para o leitor (issue #23). Não é nota de confiabilidade.
+    public static readonly IReadOnlyDictionary<string, string> Kinds = new Dictionary<string, string>
+    {
+        ["jornalismo"] = "Veículo de jornalismo",
+        ["agencia-publica"] = "Agência pública de notícias",
+        ["institucional"] = "Órgão público ou instituição",
+        ["universidade"] = "Universidade ou fundação de pesquisa",
+        ["divulgacao-cientifica"] = "Divulgação científica",
+    };
+
+    [GeneratedRegex("^[a-z]{2}$")]
+    private static partial Regex LanguagePattern();
+
+    private sealed record Row(string? Id, string? Name, string? Url, string? Topic, List<string>? ExcludeUrlContains, string? Language, string? Kind, string? Reason);
 
     public static IReadOnlyList<FeedSource> Parse(string json)
     {
@@ -38,7 +63,20 @@ public static partial class SourceCatalog
             if (!Uri.TryCreate(row.Url, UriKind.Absolute, out var url) || url.Scheme != Uri.UriSchemeHttps || !url.IsDefaultPort
                 || !string.IsNullOrEmpty(url.UserInfo) || url.HostNameType != UriHostNameType.Dns || IPAddress.TryParse(url.Host, out _))
                 throw new IngestionException($"Fonte {label}: URL precisa ser https, com nome de domínio, porta padrão e sem credenciais.");
-            result.Add(new FeedSource(row.Id, row.Name.Trim(), url, row.Topic.Trim().ToLowerInvariant()));
+            var topic = row.Topic.Trim().ToLowerInvariant();
+            if (!Areas.ContainsKey(topic)) throw new IngestionException($"Fonte {label}: área (topic) desconhecida \"{topic}\". Use uma de: {string.Join(", ", Areas.Keys)}.");
+            // Curadoria registrada: quem inclui uma fonte diz o idioma, o tipo e por que ela entrou.
+            if (string.IsNullOrWhiteSpace(row.Language)) throw new IngestionException($"Fonte {label}: language obrigatório (idioma em 2 letras, ex.: pt).");
+            if (!LanguagePattern().IsMatch(row.Language.Trim())) throw new IngestionException($"Fonte {label}: language deve ser o código do idioma em 2 letras minúsculas (ex.: pt, en).");
+            if (string.IsNullOrWhiteSpace(row.Kind)) throw new IngestionException($"Fonte {label}: kind obrigatório (tipo da fonte).");
+            if (!Kinds.ContainsKey(row.Kind.Trim())) throw new IngestionException($"Fonte {label}: kind \"{row.Kind}\" não é um tipo conhecido. Use um de: {string.Join(", ", Kinds.Keys)}.");
+            if (string.IsNullOrWhiteSpace(row.Reason)) throw new IngestionException($"Fonte {label}: reason obrigatório (motivo da escolha).");
+            var reason = row.Reason.Trim();
+            if (reason.Length is < 20 or > 280) throw new IngestionException($"Fonte {label}: reason (motivo da escolha) precisa ter de 20 a 280 caracteres.");
+            var exclude = (row.ExcludeUrlContains ?? []).Select(x => x?.Trim() ?? "").ToList();
+            // "/" ou vazio descartaria a fonte inteira por engano.
+            if (exclude.Any(x => x.Length < 3 || x.Length > 100)) throw new IngestionException($"Fonte {label}: cada item de excludeUrlContains precisa ter de 3 a 100 caracteres.");
+            result.Add(new FeedSource(row.Id, row.Name.Trim(), url, topic, exclude, row.Language.Trim(), row.Kind.Trim(), reason));
         }
         return result;
     }
