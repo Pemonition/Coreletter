@@ -45,7 +45,7 @@
       "titulo": "A mesma notícia em vários veículos",
       "texto": "Duas manchetes são a mesma história quando dividem 3 ou mais palavras relevantes e pelo menos uma delas é nome próprio.",
       "arquivo": "backend/RadarPlural.Ingestion/StoryClustering.cs",
-      "linha": 109,
+      "linha": 113,
       "linguagem": "csharp",
       "codigo": "public static bool SameStory(IReadOnlySet<string> wordsA, IReadOnlySet<string> namesA, IReadOnlySet<string> wordsB, IReadOnlySet<string> namesB)\n{\n    var shared = wordsA.Intersect(wordsB).ToList();\n    return shared.Count >= MinSharedWords && shared.Any(t => namesA.Contains(t) || namesB.Contains(t));\n}"
     },

@@ -10,7 +10,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { validarRoteiro, VERSAO_ROTEIRO } from "./lib.mjs";
 
 const aqui = dirname(fileURLToPath(import.meta.url));
@@ -103,4 +103,4 @@ async function main() {
   return 0;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) process.exitCode = await main();
+if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) process.exitCode = await main();

@@ -58,7 +58,7 @@ return new TriageResult(true, null, flags);
 
 Duas manchetes são a mesma história quando dividem 3 ou mais palavras relevantes e pelo menos uma delas é nome próprio.
 
-`backend/RadarPlural.Ingestion/StoryClustering.cs`, linhas 109–113:
+`backend/RadarPlural.Ingestion/StoryClustering.cs`, linhas 113–117:
 
 ```csharp
 public static bool SameStory(IReadOnlySet<string> wordsA, IReadOnlySet<string> namesA, IReadOnlySet<string> wordsB, IReadOnlySet<string> namesB)

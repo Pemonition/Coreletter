@@ -28,7 +28,7 @@
       "titulo": "A mesma notícia em vários veículos",
       "texto": "Duas manchetes são a mesma história quando dividem 3 ou mais palavras relevantes e pelo menos uma delas é nome próprio.",
       "arquivo": "backend/RadarPlural.Ingestion/StoryClustering.cs",
-      "linhas": [109, 113],
+      "linhas": [113, 117],
       "linguagem": "csharp"
     },
     {
