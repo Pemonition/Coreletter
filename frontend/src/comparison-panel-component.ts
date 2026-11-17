@@ -1,7 +1,7 @@
 // src/app/comparison-panel.component.ts
 import { CommonModule } from "@angular/common";
 import { Component, computed, input, output } from "@angular/core";
-import { Post } from "./story-card.component";
+import { Post } from "./story-card-component";
 
 export interface ComparisonResult {
   summary?: string;

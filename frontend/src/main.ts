@@ -2,11 +2,11 @@ import { Component, signal } from "@angular/core";
 import { bootstrapApplication } from "@angular/platform-browser";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
-import { Post, StoryCardComponent } from "./app/story-card.component";
+import { Post, StoryCardComponent } from "./story-card-component";
 import {
   ComparisonPanelComponent,
   ComparisonResult,
-} from "./app/comparison-panel.component";
+} from "./comparison-panel-component";
 
 interface User {
   id: string;
@@ -14,18 +14,7 @@ interface User {
   displayName: string;
   isAdmin: boolean;
 }
-interface Post {
-  id: string;
-  url: string;
-  title: string;
-  topic: string;
-  type: string;
-  comment: string;
-  authorId: string;
-  authorName: string;
-  createdAt: string;
-  isSaved: boolean;
-}
+ 
 interface Report {
   id: string;
   postId: string;
@@ -35,7 +24,7 @@ interface Report {
 @Component({
   selector: "app-root",
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, StoryCardComponent, ComparisonPanelComponent],
   templateUrl: "./app.html",
 })
 class App {
