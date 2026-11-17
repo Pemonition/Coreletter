@@ -628,17 +628,21 @@ textarea {
     display: block;
     padding: 15px 5%;
   }
+  /* #15: as abas quebram linha em vez de rolar escondidas; todas ficam visíveis em 360 px. */
   .sidebar {
     display: flex;
-    gap: 4px;
+    flex-wrap: wrap;
+    gap: 6px;
     padding: 0;
     margin-bottom: 15px;
-    overflow: auto;
   }
   .sidebar > button {
     width: auto;
+    flex: 1 1 auto;
+    justify-content: center;
     white-space: nowrap;
-    font-size: 11px;
+    font-size: 12px;
+    min-height: 40px;
   }
   .side-label,
   .side-note {
@@ -695,3 +699,32 @@ textarea {
     padding: 9px 11px;
   }
 }
+
+/* Histórias e comparação (B02/B06, versão básica). Cores de estado reaproveitam as variáveis do tema quando existirem. */
+.stories { display: grid; gap: 16px; }
+.story { background: var(--card, #fff); border: 1px solid var(--line, #e3e6ea); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.story h3 { margin: 0; font-size: 1.15rem; line-height: 1.3; }
+.story time { margin-left: auto; color: var(--muted, #667085); font-size: .85rem; }
+.story-sources { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.story-sources li { display: grid; gap: 2px; min-width: 0; }
+.story-sources strong { font-size: .8rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted, #667085); }
+.story-sources a { overflow-wrap: anywhere; }
+.story > button { align-self: flex-start; }
+.quota { font-size: .9rem; color: var(--muted, #667085); }
+.comparison { border-top: 1px solid var(--line, #e3e6ea); padding-top: 12px; display: grid; gap: 12px; }
+.comparison .simulated { margin: 0; font-size: .85rem; color: var(--muted, #667085); }
+.summary { display: flex; flex-wrap: wrap; gap: 8px; }
+.claim { border-left: 3px solid #98a2b3; padding: 4px 0 4px 12px; display: grid; gap: 6px; }
+.claim p { margin: 0; }
+.claim.concordante { border-left-color: #1b7f4b; }
+.claim.divergente { border-left-color: #b4232d; }
+.claim.unica_fonte { border-left-color: #a35f00; }
+.claim-chip { display: inline-block; justify-self: start; font-size: .75rem; font-weight: 600; padding: 3px 8px; border-radius: 999px; background: #eef0f3; color: #344054; }
+.claim-chip.concordante { background: #e3f4ea; color: #1b7f4b; }
+.claim-chip.divergente { background: #fbe5e6; color: #b4232d; }
+.claim-chip.unica_fonte { background: #fdf0dc; color: #8a5000; }
+.comparison blockquote { margin: 0; font-size: .92rem; overflow-wrap: anywhere; }
+.comparison blockquote span { font-weight: 600; }
+.comparison details summary { cursor: pointer; color: var(--muted, #667085); }
+
+.sidebar > button:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }

@@ -1,0 +1,15 @@
+# Configuração que NÃO é segredo. Segredos (conexão do banco, chaves de IA) ficam no Secret "coreletter-secrets",
+# criado à mão com kubectl e nunca versionado (ver README.md desta pasta).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coreletter-config
+  namespace: coreletter
+data:
+  ASPNETCORE_ENVIRONMENT: Production
+  PORT: "8080"
+  # Réplicas não migram ao iniciar: quem migra é o Job "coreletter-migrate" (decisoes/0004).
+  Database__MigrateOnStartup: "false"
+  # Atrás de Ingress/proxy, sem isto a API enxerga o IP do proxy e TODOS os usuários dividem o mesmo limite
+  # de requisições. Seguro aqui porque o Service é ClusterIP: só o proxy do cluster alcança a API.
+  ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"

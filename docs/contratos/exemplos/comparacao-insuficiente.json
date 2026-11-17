@@ -1,0 +1,54 @@
+{
+  "contractVersion": "1.0",
+  "id": "c0000000-0000-0000-0000-000000000003",
+  "storyId": "s0000000-0000-0000-0000-000000000003",
+  "provider": "simulado",
+  "simulated": true,
+  "createdAt": "2026-11-12T18:00:00Z",
+  "sources": [
+    {
+      "itemId": "11111111-0000-0000-0000-00000000000a",
+      "sourceId": "fonte-a",
+      "sourceName": "Fonte A",
+      "url": "https://fonte-a.example.org/mercado-ia",
+      "title": "O que esperar da inteligência artificial em 2027",
+      "summary": "Especialistas comentam tendências para o próximo ano.",
+      "publishedAt": "2026-11-12T08:00:00-03:00"
+    },
+    {
+      "itemId": "11111111-0000-0000-0000-00000000000b",
+      "sourceId": "fonte-b",
+      "sourceName": "Fonte B",
+      "url": "https://fonte-b.example.org/ia-empresas",
+      "title": "IA nas empresas: o debate continua",
+      "summary": "Opinião: o setor precisa discutir regras.",
+      "publishedAt": "2026-11-12T12:00:00-03:00"
+    }
+  ],
+  "claims": [
+    {
+      "id": "k1",
+      "text": "Os textos disponíveis não trazem afirmações factuais comparáveis.",
+      "status": "evidencia_insuficiente",
+      "supportedBy": [],
+      "contradictedBy": [],
+      "evidence": []
+    }
+  ],
+  "summary": {
+    "concordantes": 0,
+    "divergentes": 0,
+    "unicaFonte": 0,
+    "evidenciaInsuficiente": 1
+  },
+  "limitations": [
+    "Comparação feita sobre manchetes e resumos, não sobre o texto completo das matérias.",
+    "Concordância entre veículos não prova que a informação é verdadeira.",
+    "Fontes e conteúdo deste exemplo são fictícios.",
+    "Manchetes e resumos são genéricos ou de opinião; não há fato verificável em comum."
+  ],
+  "usage": {
+    "units": 1,
+    "fromCache": false
+  }
+}

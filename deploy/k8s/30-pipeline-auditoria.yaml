@@ -1,0 +1,37 @@
+# Etapa de auditoria do pipeline: N réplicas reservam histórias com FOR UPDATE SKIP LOCKED (decisoes/0004).
+# replicas: 0 até existir o adaptador do auditor (B05). Depois: kubectl -n coreletter scale deploy/coreletter-auditoria --replicas=2
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coreletter-auditoria
+  namespace: coreletter
+  labels: { app: coreletter-auditoria }
+  annotations:
+    # Máximo planejado de réplicas, usado no cálculo do teto de custo (custo.json) enquanto não há autoscaler.
+    coreletter.dev/max-replicas: "3"
+spec:
+  replicas: 0
+  selector:
+    matchLabels: { app: coreletter-auditoria }
+  template:
+    metadata:
+      labels: { app: coreletter-auditoria }
+    spec:
+      # SIGTERM: termina a história atual e sai; o lease das não iniciadas expira e outra réplica retoma.
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: auditoria
+          image: coreletter-worker:local
+          imagePullPolicy: IfNotPresent
+          args: ["--etapa", "auditoria", "--continuo", "--lote", "5"]
+          envFrom:
+            - secretRef:
+                name: coreletter-secrets
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { cpu: 500m, memory: 256Mi }
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }

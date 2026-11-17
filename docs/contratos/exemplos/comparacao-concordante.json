@@ -1,0 +1,100 @@
+{
+  "contractVersion": "1.0",
+  "id": "c0000000-0000-0000-0000-000000000001",
+  "storyId": "s0000000-0000-0000-0000-000000000001",
+  "provider": "simulado",
+  "simulated": true,
+  "createdAt": "2026-11-12T18:00:00Z",
+  "sources": [
+    {
+      "itemId": "11111111-0000-0000-0000-00000000000a",
+      "sourceId": "fonte-a",
+      "sourceName": "Fonte A",
+      "url": "https://fonte-a.example.org/chip-nacional",
+      "title": "Universidade lança chip nacional para sensores agrícolas",
+      "summary": "O chip foi desenvolvido em parceria com uma cooperativa e começa a ser testado em 20 fazendas no primeiro semestre.",
+      "publishedAt": "2026-11-12T10:00:00-03:00"
+    },
+    {
+      "itemId": "11111111-0000-0000-0000-00000000000b",
+      "sourceId": "fonte-b",
+      "sourceName": "Fonte B",
+      "url": "https://fonte-b.example.org/chip-agro",
+      "title": "Chip criado em universidade vai monitorar lavouras",
+      "summary": "Testes começam em 20 fazendas no primeiro semestre, segundo a equipe responsável.",
+      "publishedAt": "2026-11-12T11:30:00-03:00"
+    }
+  ],
+  "claims": [
+    {
+      "id": "k1",
+      "text": "Uma universidade desenvolveu um chip para uso no campo.",
+      "status": "concordante",
+      "supportedBy": [
+        "11111111-0000-0000-0000-00000000000a",
+        "11111111-0000-0000-0000-00000000000b"
+      ],
+      "contradictedBy": [],
+      "evidence": [
+        {
+          "itemId": "11111111-0000-0000-0000-00000000000a",
+          "quote": "Universidade lança chip nacional para sensores agrícolas"
+        },
+        {
+          "itemId": "11111111-0000-0000-0000-00000000000b",
+          "quote": "Chip criado em universidade vai monitorar lavouras"
+        }
+      ]
+    },
+    {
+      "id": "k2",
+      "text": "Os testes começam em 20 fazendas no primeiro semestre.",
+      "status": "concordante",
+      "supportedBy": [
+        "11111111-0000-0000-0000-00000000000a",
+        "11111111-0000-0000-0000-00000000000b"
+      ],
+      "contradictedBy": [],
+      "evidence": [
+        {
+          "itemId": "11111111-0000-0000-0000-00000000000a",
+          "quote": "começa a ser testado em 20 fazendas no primeiro semestre"
+        },
+        {
+          "itemId": "11111111-0000-0000-0000-00000000000b",
+          "quote": "Testes começam em 20 fazendas no primeiro semestre"
+        }
+      ]
+    },
+    {
+      "id": "k3",
+      "text": "O projeto tem parceria com uma cooperativa.",
+      "status": "unica_fonte",
+      "supportedBy": [
+        "11111111-0000-0000-0000-00000000000a"
+      ],
+      "contradictedBy": [],
+      "evidence": [
+        {
+          "itemId": "11111111-0000-0000-0000-00000000000a",
+          "quote": "desenvolvido em parceria com uma cooperativa"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "concordantes": 2,
+    "divergentes": 0,
+    "unicaFonte": 1,
+    "evidenciaInsuficiente": 0
+  },
+  "limitations": [
+    "Comparação feita sobre manchetes e resumos, não sobre o texto completo das matérias.",
+    "Concordância entre veículos não prova que a informação é verdadeira.",
+    "Fontes e conteúdo deste exemplo são fictícios."
+  ],
+  "usage": {
+    "units": 1,
+    "fromCache": false
+  }
+}

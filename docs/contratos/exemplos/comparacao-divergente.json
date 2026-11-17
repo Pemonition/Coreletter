@@ -1,0 +1,125 @@
+{
+  "contractVersion": "1.0",
+  "id": "c0000000-0000-0000-0000-000000000002",
+  "storyId": "s0000000-0000-0000-0000-000000000002",
+  "provider": "simulado",
+  "simulated": true,
+  "createdAt": "2026-11-12T18:00:00Z",
+  "sources": [
+    {
+      "itemId": "11111111-0000-0000-0000-00000000000a",
+      "sourceId": "fonte-a",
+      "sourceName": "Fonte A",
+      "url": "https://fonte-a.example.org/vazamento",
+      "title": "Vazamento expõe dados de 2 milhões de clientes de operadora",
+      "summary": "A empresa confirmou o incidente e diz que senhas não foram afetadas.",
+      "publishedAt": "2026-11-12T09:00:00-03:00"
+    },
+    {
+      "itemId": "11111111-0000-0000-0000-00000000000b",
+      "sourceId": "fonte-b",
+      "sourceName": "Fonte B",
+      "url": "https://fonte-b.example.org/incidente",
+      "title": "Operadora admite incidente com dados de 200 mil clientes",
+      "summary": "Segundo a operadora, senhas não foram afetadas e a investigação continua.",
+      "publishedAt": "2026-11-12T09:40:00-03:00"
+    },
+    {
+      "itemId": "11111111-0000-0000-0000-00000000000c",
+      "sourceId": "fonte-c",
+      "sourceName": "Fonte C",
+      "url": "https://fonte-c.example.org/operadora",
+      "title": "Operadora investiga acesso indevido a sistema de cadastro",
+      "summary": "Empresa não informou quantos clientes foram atingidos.",
+      "publishedAt": "2026-11-12T10:15:00-03:00"
+    }
+  ],
+  "claims": [
+    {
+      "id": "k1",
+      "text": "A operadora reconheceu um incidente envolvendo dados de clientes.",
+      "status": "concordante",
+      "supportedBy": [
+        "11111111-0000-0000-0000-00000000000a",
+        "11111111-0000-0000-0000-00000000000b",
+        "11111111-0000-0000-0000-00000000000c"
+      ],
+      "contradictedBy": [],
+      "evidence": [
+        {
+          "itemId": "11111111-0000-0000-0000-00000000000a",
+          "quote": "A empresa confirmou o incidente"
+        },
+        {
+          "itemId": "11111111-0000-0000-0000-00000000000b",
+          "quote": "Operadora admite incidente com dados de 200 mil clientes"
+        },
+        {
+          "itemId": "11111111-0000-0000-0000-00000000000c",
+          "quote": "Operadora investiga acesso indevido a sistema de cadastro"
+        }
+      ]
+    },
+    {
+      "id": "k2",
+      "text": "O número de clientes atingidos difere entre as fontes.",
+      "status": "divergente",
+      "supportedBy": [
+        "11111111-0000-0000-0000-00000000000a"
+      ],
+      "contradictedBy": [
+        "11111111-0000-0000-0000-00000000000b"
+      ],
+      "evidence": [
+        {
+          "itemId": "11111111-0000-0000-0000-00000000000a",
+          "quote": "dados de 2 milhões de clientes"
+        },
+        {
+          "itemId": "11111111-0000-0000-0000-00000000000b",
+          "quote": "dados de 200 mil clientes"
+        },
+        {
+          "itemId": "11111111-0000-0000-0000-00000000000c",
+          "quote": "Empresa não informou quantos clientes foram atingidos"
+        }
+      ]
+    },
+    {
+      "id": "k3",
+      "text": "Senhas não teriam sido afetadas, segundo a empresa.",
+      "status": "concordante",
+      "supportedBy": [
+        "11111111-0000-0000-0000-00000000000a",
+        "11111111-0000-0000-0000-00000000000b"
+      ],
+      "contradictedBy": [],
+      "evidence": [
+        {
+          "itemId": "11111111-0000-0000-0000-00000000000a",
+          "quote": "senhas não foram afetadas"
+        },
+        {
+          "itemId": "11111111-0000-0000-0000-00000000000b",
+          "quote": "senhas não foram afetadas"
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "concordantes": 2,
+    "divergentes": 1,
+    "unicaFonte": 0,
+    "evidenciaInsuficiente": 0
+  },
+  "limitations": [
+    "Comparação feita sobre manchetes e resumos, não sobre o texto completo das matérias.",
+    "Concordância entre veículos não prova que a informação é verdadeira.",
+    "Fontes e conteúdo deste exemplo são fictícios.",
+    "Divergência numérica não indica qual número está correto; consulte as matérias originais."
+  ],
+  "usage": {
+    "units": 1,
+    "fromCache": false
+  }
+}
