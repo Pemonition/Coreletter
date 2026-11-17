@@ -203,7 +203,10 @@ public class StoryClustererTests
         var billion = C("canaltech", "Pré-venda de GTA 6 supera US$ 1 bilhão; veja números no PS5 e XBOX");
         var leak = C("canaltech", "Antes da hora: notas de GTA 6 vazam na PlayStation Store antes do embargo");
         var clusters = StoryClusterer.Cluster([cloud, record, billion, leak]);
-        Assert.Equal([record.Id, billion.Id], ClusterOf(clusters, record).Order());
+        // Mesmo veículo não forma história sozinho (é a mesma notícia em veículos DIFERENTES): "recorde" e "US$ 1 bilhão"
+        // são do Canaltech e só se juntariam por meio de outro veículo. Antes eram agrupadas; a regra mudou em 13/11/2026.
+        Assert.Single(ClusterOf(clusters, record));
+        Assert.Single(ClusterOf(clusters, billion));
         Assert.Single(ClusterOf(clusters, cloud));
         Assert.Single(ClusterOf(clusters, leak));
     }
@@ -287,12 +290,38 @@ public class SourceCatalogExclusionTests
     [Fact]
     public void ExcludedPathsAreLoaded()
     {
-        var s = Assert.Single(SourceCatalog.Parse("""[{ "id": "tecnoblog", "name": "Tecnoblog", "url": "https://tecnoblog.net/feed/", "topic": "tecnologia", "excludeUrlContains": ["/achados/", "/guias/"] }]"""));
+        var s = Assert.Single(SourceCatalog.Parse("""[{ "id": "tecnoblog", "name": "Tecnoblog", "url": "https://tecnoblog.net/feed/", "topic": "tecnologia", "excludeUrlContains": ["/achados/", "/guias/"], "language": "pt", "kind": "jornalismo", "reason": "Fonte de teste com um motivo de escolha suficiente." }]"""));
         Assert.Equal(["/achados/", "/guias/"], s.ExcludeUrlContains);
     }
 
     [Theory]
-    [InlineData("""[{ "id": "a", "name": "A", "url": "https://example.org/f", "topic": "t", "excludeUrlContains": [""] }]""")]
-    [InlineData("""[{ "id": "a", "name": "A", "url": "https://example.org/f", "topic": "t", "excludeUrlContains": ["/"] }]""")]
+    [InlineData("""[{ "id": "a", "name": "A", "url": "https://example.org/f", "topic": "tecnologia", "excludeUrlContains": [""], "language": "pt", "kind": "jornalismo", "reason": "Fonte de teste com um motivo de escolha suficiente." }]""")]
+    [InlineData("""[{ "id": "a", "name": "A", "url": "https://example.org/f", "topic": "tecnologia", "excludeUrlContains": ["/"], "language": "pt", "kind": "jornalismo", "reason": "Fonte de teste com um motivo de escolha suficiente." }]""")]
     public void ExclusionThatWouldMatchEverythingIsRejected(string json) => Assert.Throws<IngestionException>(() => SourceCatalog.Parse(json));
 }
+
+public class SameOutletDoesNotChainTests
+{
+    private static ClusterCandidate C(string source, string title) => new(Guid.NewGuid(), source, title, DateTimeOffset.UtcNow);
+
+    [Fact]
+    public void ItemsFromOneOutletSharingCommonWordsAreNotAStory()
+    {
+        // Caso real (13/11/2026): manchetes em inglês têm Quase Toda Palavra Em Maiúscula e o Space.com repete NASA/SpaceX;
+        // ligando item com item do mesmo veículo, 27 manchetes viraram uma "história" só.
+        var a = C("space-com", "SpaceX Starship Flight 15 Live Updates: NASA Watches Double Landing Attempt");
+        var b = C("space-com", "SpaceX Moves Starship Flight 15 Booster To Launch Pad Ahead Of NASA Review");
+        var c = C("space-com", "NASA Picks SpaceX Starship For New Moon Landing Flight Tests");
+        var clusters = StoryClusterer.Cluster([a, b, c]);
+        Assert.Equal(3, clusters.Count);
+    }
+
+    [Fact]
+    public void SameFactInTwoOutletsStillJoins()
+    {
+        var a = C("tecmundo", "Jensen Huang renuncia ao cargo de CEO da Nvidia após escândalos");
+        var b = C("tecnoblog", "Jensen Huang deixa o cargo de CEO da Nvidia após escândalos");
+        Assert.Single(StoryClusterer.Cluster([a, b]));
+    }
+}
+

@@ -97,6 +97,10 @@ public static class StoryClusterer
             for (var j = i + 1; j < ordered.Length; j++)
             {
                 if ((ordered[i].At - ordered[j].At).Duration() > maxGap) continue;
+                // História = a mesma notícia em veículos DIFERENTES. Ligar item com item do mesmo veículo encadeava manchetes
+                // que só repetem palavras da casa (Space.com: 27 itens numa "história", 13/11/2026). Do mesmo veículo,
+                // dois itens só ficam juntos se ambos se ligarem a outro veículo.
+                if (ordered[i].SourceId == ordered[j].SourceId) continue;
                 if (SameStory(words[i], names[i], words[j], names[j])) parent[Find(i)] = Find(j);
             }
 

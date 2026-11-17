@@ -1,14 +1,86 @@
-// Lista de permissão do coletor (política: docs/decisoes/0002-ingestao.md).
+// Catálogo único de fontes (política: docs/decisoes/0002-ingestao.md; critérios: docs/CATALOGO-FONTES.md).
 // Só feeds RSS/Atom públicos, publicados pelos próprios veículos para consumo por leitores.
-// Fora da lista de propósito: g1 e Folha respondem 403 a robôs identificados (testado em 12/11/2026). Não contornar.
-// excludeUrlContains: caminhos que a fonte usa para oferta/afiliado; a triagem descarta (decisoes/0003).
+// Cada fonte diz a área (topic), o idioma, o tipo e POR QUE entrou (reason): é a curadoria humana da proposta.
+// Validado em 13/11/2026 a partir de um data center (mesma condição do GitHub Actions e do Render).
+// Fora de propósito, por bloquearem robôs ou endereços de data center (403): g1, Folha, Estadão, Poder360, BBC, DW,
+// Superinteressante, Galileu, Ars Technica, Le Monde. Não contornar (sem trocar User-Agent nem usar proxy).
+// excludeUrlContains: caminhos de oferta/afiliado que a triagem descarta (decisoes/0003).
 // Incluir ou remover fonte = PR revisada. Nunca colocar aqui URL enviada por usuário sem passar pela política.
 [
-  { "id": "tecnoblog",      "name": "Tecnoblog",           "url": "https://tecnoblog.net/feed/",                                      "topic": "tecnologia", "excludeUrlContains": ["/achados/", "/guias/"] },
-  { "id": "canaltech",      "name": "Canaltech",           "url": "https://canaltech.com.br/rss/",                                    "topic": "tecnologia" },
-  { "id": "olhar-digital",  "name": "Olhar Digital",       "url": "https://olhardigital.com.br/feed/",                                "topic": "tecnologia", "excludeUrlContains": ["/reviews/"] },
-  { "id": "tecmundo",       "name": "TecMundo",            "url": "https://rss.tecmundo.com.br/feed",                                 "topic": "tecnologia", "excludeUrlContains": ["/guia-de-compras/"] },
-  { "id": "convergencia-digital", "name": "Convergência Digital", "url": "https://convergenciadigital.com.br/feed/",                "topic": "tecnologia" },
-  { "id": "mobile-time",    "name": "Mobile Time",         "url": "https://www.mobiletime.com.br/feed/",                              "topic": "tecnologia" },
-  { "id": "agencia-brasil", "name": "Agência Brasil",      "url": "https://agenciabrasil.ebc.com.br/rss/ultimasnoticias/feed.xml",    "topic": "geral" }
+  // ── Tecnologia ─────────────────────────────────────────────────────────────────────────────────────────
+  { "id": "tecnoblog", "name": "Tecnoblog", "url": "https://tecnoblog.net/feed/", "topic": "tecnologia", "language": "pt", "kind": "jornalismo",
+    "excludeUrlContains": ["/achados/", "/guias/"],
+    "reason": "Site brasileiro de tecnologia com redação própria e cobertura diária de mercado, telecom e privacidade." },
+  { "id": "canaltech", "name": "Canaltech", "url": "https://canaltech.com.br/rss/", "topic": "tecnologia", "language": "pt", "kind": "jornalismo",
+    "reason": "Portal de tecnologia de grande alcance no Brasil; aumenta a chance de a mesma notícia aparecer em vários veículos." },
+  { "id": "olhar-digital", "name": "Olhar Digital", "url": "https://olhardigital.com.br/feed/", "topic": "tecnologia", "language": "pt", "kind": "jornalismo",
+    "excludeUrlContains": ["/reviews/"],
+    "reason": "Portal brasileiro que cobre tecnologia, ciência e espaço; cruza com várias outras áreas do catálogo." },
+  { "id": "tecmundo", "name": "TecMundo", "url": "https://rss.tecmundo.com.br/feed", "topic": "tecnologia", "language": "pt", "kind": "jornalismo",
+    "excludeUrlContains": ["/guia-de-compras/"],
+    "reason": "Um dos maiores sites de tecnologia do país; base para comparar coberturas do mesmo fato." },
+  { "id": "convergencia-digital", "name": "Convergência Digital", "url": "https://convergenciadigital.com.br/feed/", "topic": "tecnologia", "language": "pt", "kind": "jornalismo",
+    "reason": "Jornalismo especializado em telecom, governo digital e regulação, ângulo que os portais gerais tratam pouco." },
+  { "id": "mobile-time", "name": "Mobile Time", "url": "https://www.mobiletime.com.br/feed/", "topic": "tecnologia", "language": "pt", "kind": "jornalismo",
+    "reason": "Cobertura especializada em mobile, pagamentos e apps no Brasil, com foco em mercado." },
+  { "id": "inovacao-tecnologica", "name": "Inovação Tecnológica", "url": "https://www.inovacaotecnologica.com.br/boletim/rss.xml", "topic": "tecnologia", "language": "pt", "kind": "divulgacao-cientifica",
+    "reason": "Divulgação de pesquisa aplicada e engenharia, com referência aos artigos científicos de origem." },
+
+  // ── Inteligência artificial ────────────────────────────────────────────────────────────────────────────
+  { "id": "olhar-digital-ia", "name": "Olhar Digital — IA", "url": "https://olhardigital.com.br/tag/inteligencia-artificial/feed/", "topic": "ia", "language": "pt", "kind": "jornalismo",
+    "reason": "Recorte de IA de um portal brasileiro, em português e atualizado diariamente." },
+  { "id": "mit-news-ia", "name": "MIT News — IA", "url": "https://news.mit.edu/rss/topic/artificial-intelligence2", "topic": "ia", "language": "en", "kind": "universidade",
+    "reason": "Notícias de pesquisa em IA direto da universidade que a produz; contraponto à cobertura comercial do tema." },
+
+  // ── Ciência ────────────────────────────────────────────────────────────────────────────────────────────
+  { "id": "jornal-usp", "name": "Jornal da USP", "url": "https://jornal.usp.br/feed/", "topic": "ciencia", "language": "pt", "kind": "universidade",
+    "reason": "Veículo da maior universidade do país, com pesquisadores como fonte direta." },
+  { "id": "pesquisa-fapesp", "name": "Revista Pesquisa FAPESP", "url": "https://revistapesquisa.fapesp.br/feed/", "topic": "ciencia", "language": "pt", "kind": "universidade",
+    "reason": "Revista mensal de jornalismo científico da fundação de amparo à pesquisa de São Paulo; textos aprofundados." },
+  { "id": "agencia-fapesp", "name": "Agência FAPESP", "url": "https://agencia.fapesp.br/rss/", "topic": "ciencia", "language": "pt", "kind": "universidade",
+    "reason": "Notícias diárias sobre pesquisas financiadas pela FAPESP, com indicação do estudo publicado." },
+  { "id": "agencia-fiocruz", "name": "Agência Fiocruz", "url": "https://agencia.fiocruz.br/rss.xml", "topic": "ciencia", "language": "pt", "kind": "institucional",
+    "reason": "Notícias de saúde pública e pesquisa biomédica da Fiocruz, instituição de referência no tema." },
+  { "id": "radioagencia-pesquisa", "name": "Radioagência — Pesquisa e Inovação", "url": "https://agenciabrasil.ebc.com.br/radioagencia-nacional/rss/pesquisa-e-inovacao/feed.xml", "topic": "ciencia", "language": "pt", "kind": "agencia-publica",
+    "reason": "Recorte de ciência da agência pública EBC, em linguagem acessível." },
+  { "id": "sciencedaily", "name": "ScienceDaily", "url": "https://www.sciencedaily.com/rss/all.xml", "topic": "ciencia", "language": "en", "kind": "divulgacao-cientifica",
+    "reason": "Agregador internacional de comunicados de universidades e institutos, com link para o estudo original." },
+
+  // ── Espaço ─────────────────────────────────────────────────────────────────────────────────────────────
+  { "id": "socientifica", "name": "Socientífica", "url": "https://socientifica.com.br/feed/", "topic": "espaco", "language": "pt", "kind": "divulgacao-cientifica",
+    "reason": "Divulgação de astronomia e espaço em português, com volume diário." },
+  { "id": "nasa", "name": "NASA", "url": "https://www.nasa.gov/feed/", "topic": "espaco", "language": "en", "kind": "institucional",
+    "reason": "Fonte primária das missões espaciais dos EUA; útil para conferir o que os veículos dizem sobre elas." },
+  { "id": "space-com", "name": "Space.com", "url": "https://www.space.com/feeds/all", "topic": "espaco", "language": "en", "kind": "jornalismo",
+    "reason": "Jornalismo especializado em espaço com cobertura diária de lançamentos e astronomia." },
+
+  // ── Curiosidades ───────────────────────────────────────────────────────────────────────────────────────
+  { "id": "aventuras-na-historia", "name": "Aventuras na História", "url": "https://aventurasnahistoria.com.br/feed/", "topic": "curiosidades", "language": "pt", "kind": "jornalismo",
+    "reason": "Revista brasileira de divulgação de história; traz curiosidades com contexto, fora do ciclo de notícias do dia." },
+
+  // ── Brasil e mundo ─────────────────────────────────────────────────────────────────────────────────────
+  { "id": "agencia-brasil", "name": "Agência Brasil", "url": "https://agenciabrasil.ebc.com.br/rss/ultimasnoticias/feed.xml", "topic": "brasil-e-mundo", "language": "pt", "kind": "agencia-publica",
+    "reason": "Agência pública de notícias com conteúdo de reprodução livre; cobre o noticiário nacional todo dia." },
+  { "id": "agencia-brasil-internacional", "name": "Agência Brasil — Internacional", "url": "https://agenciabrasil.ebc.com.br/rss/internacional/feed.xml", "topic": "brasil-e-mundo", "language": "pt", "kind": "agencia-publica",
+    "reason": "Noticiário internacional em português, já que BBC e DW bloqueiam a coleta a partir de data center." },
+  { "id": "agencia-camara", "name": "Agência Câmara de Notícias", "url": "https://www.camara.leg.br/noticias/rss/ultimas-noticias", "topic": "brasil-e-mundo", "language": "pt", "kind": "institucional",
+    "reason": "Fonte primária sobre projetos e votações na Câmara; permite conferir o que os veículos dizem sobre o Legislativo." },
+  { "id": "agencia-publica", "name": "Agência Pública", "url": "https://apublica.org/feed/", "topic": "brasil-e-mundo", "language": "pt", "kind": "jornalismo",
+    "reason": "Jornalismo investigativo sem fins lucrativos, com reportagens longas e documentos citados." },
+  { "id": "nexo", "name": "Nexo Jornal", "url": "https://www.nexojornal.com.br/rss.xml", "topic": "brasil-e-mundo", "language": "pt", "kind": "jornalismo",
+    "reason": "Jornalismo explicativo, com contexto e dados sobre os temas do noticiário." },
+  { "id": "gazeta-do-povo", "name": "Gazeta do Povo", "url": "https://www.gazetadopovo.com.br/feed/rss/ultimas-noticias.xml", "topic": "brasil-e-mundo", "language": "pt", "kind": "jornalismo",
+    "reason": "Jornal com princípios editoriais publicados e linha diferente dos demais; amplia a variedade de enfoques comparados." },
+  { "id": "cartacapital", "name": "CartaCapital", "url": "https://www.cartacapital.com.br/feed/", "topic": "brasil-e-mundo", "language": "pt", "kind": "jornalismo",
+    "reason": "Revista semanal de política e economia com linha editorial própria; amplia a variedade de enfoques comparados." },
+  { "id": "metropoles", "name": "Metrópoles", "url": "https://www.metropoles.com/feed", "topic": "brasil-e-mundo", "language": "pt", "kind": "jornalismo",
+    "reason": "Portal de notícias de alto volume, com forte cobertura de Brasília e do noticiário nacional." },
+  { "id": "jota", "name": "JOTA", "url": "https://www.jota.info/feed", "topic": "brasil-e-mundo", "language": "pt", "kind": "jornalismo",
+    "reason": "Jornalismo especializado em Judiciário, regulação e tributos; cobre decisões que afetam tecnologia e economia." },
+
+  // ── Economia ───────────────────────────────────────────────────────────────────────────────────────────
+  { "id": "exame", "name": "Exame", "url": "https://exame.com/feed/", "topic": "economia", "language": "pt", "kind": "jornalismo",
+    "reason": "Revista de negócios e economia, com cobertura de empresas e mercado de tecnologia." },
+  { "id": "infomoney", "name": "InfoMoney", "url": "https://www.infomoney.com.br/feed/", "topic": "economia", "language": "pt", "kind": "jornalismo",
+    "reason": "Portal de economia e finanças com cobertura diária de mercado; cruza com notícias de empresas de tecnologia." }
 ]
