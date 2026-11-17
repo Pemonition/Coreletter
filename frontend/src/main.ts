@@ -2,6 +2,11 @@ import { Component, signal } from "@angular/core";
 import { bootstrapApplication } from "@angular/platform-browser";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
+import { Post, StoryCardComponent } from "./app/story-card.component";
+import {
+  ComparisonPanelComponent,
+  ComparisonResult,
+} from "./app/comparison-panel.component";
 
 interface User {
   id: string;
@@ -302,5 +307,56 @@ class App {
       return null;
     }
   }
+
+  // Painel de Estado de Comparação e Metodos
+  selectedForComparison = signal<Post[]>([]);
+comparisonResult = signal<ComparisonResult | null>(null);
+comparing = signal(false);
+comparisonError = signal("");
+
+toggleCompare(post: Post) {
+  this.selectedForComparison.update((current) => {
+    const exists = current.some((p) => p.id === post.id);
+    if (exists) {
+      return current.filter((p) => p.id !== post.id);
+    }
+    return [...current, post];
+  });
+}
+
+removeFromComparison(postId: string) {
+  this.selectedForComparison.update((current) =>
+    current.filter((p) => p.id !== postId),
+  );
+}
+
+clearComparison() {
+  this.selectedForComparison.set([]);
+  this.comparisonResult.set(null);
+  this.comparisonError.set("");
+}
+
+async runComparison(items: Post[]) {
+  if (items.length < 2) return;
+  this.comparing.set(true);
+  this.comparisonError.set("");
+  try {
+    // Quando o endpoint de comparação existir na API, basta chamar aqui:
+    // const res = await this.api<ComparisonResult>("/comparisons", {
+    //   method: "POST",
+    //   body: JSON.stringify({ postIds: items.map((i) => i.id) }),
+    // });
+    // this.comparisonResult.set(res);
+    this.comparisonError.set(
+      "Endpoint de comparação ainda não conectado neste ambiente.",
+    );
+  } catch (e) {
+    this.comparisonError.set(
+      e instanceof Error ? e.message : "Erro ao comparar fontes.",
+    );
+  } finally {
+    this.comparing.set(false);
+  }
+}
 }
 bootstrapApplication(App).catch(console.error);

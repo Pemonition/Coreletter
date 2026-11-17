@@ -107,58 +107,44 @@
     }@empty{
     <div class="empty">Nenhuma denúncia para analisar.</div>
     }}@else{
-    <div class="cards">
-      @for(post of posts();track post.id){
-      <article class="card">
-        <div class="card-meta">
-          <span
-            class="badge"
-            [class.podcast]="post.type==='podcast'"
-            [class.music]="post.type==='music'"
-            >{{label(post.type)}}</span
-          ><span class="topic">{{post.topic}}</span>
-        </div>
-        <a
-          class="post-title"
-          [href]="safeUrl(post.url)"
-          target="_blank"
-          rel="noopener noreferrer"
-          >{{post.title}} <span>↗</span></a
-        ><span class="source">{{domain(post.url)}}</span>
-        <p class="comment">{{post.comment}}</p>
-        <div class="author">
-          <span class="avatar"
-            >{{post.authorName.slice(0,1).toUpperCase()}}</span
-          >
-          <div>
-            <strong>{{post.authorName}}</strong
-            ><time>{{post.createdAt | date:'dd/MM/yyyy · HH:mm'}}</time>
-          </div>
-        </div>
-        <div class="card-actions">
-          <button (click)="save(post)" [attr.aria-pressed]="post.isSaved">
-            {{post.isSaved?'◆ Salvo':'◇ Salvar'}}</button
-          ><button (click)="report(post)">Denunciar</button
-          >@if(user()?.id===post.authorId){<button
-            class="danger"
-            (click)="remove(post)"
-          >
-            Excluir</button
-          >}
-        </div>
-      </article>
-      }@empty{
-      <div class="empty">
-        <span>✦</span>
-        <h3>A próxima descoberta pode ser sua.</h3>
-        <p>
-          {{view==='saved'?'Salve publicações do feed para encontrá-las
-          aqui.':'Nenhuma publicação encontrada. Compartilhe um link ou ajuste
-          os filtros.'}}
-        </p>
-      </div>
-      }
+
+      // App Story Card component sera renderizado aqui para cada post no feed ou itens salvos
+   <div class="cards">
+  @for (post of posts(); track post.id) {
+    <app-story-card
+      [post]="post"
+      [currentUserId]="user()?.id ?? null"
+      (saveClick)="save($event)"
+      (reportClick)="report($event)"
+      (deleteClick)="remove($event)"
+    />
+  } @empty {
+    <div class="empty">
+      <span>✦</span>
+      <h3>A próxima descoberta pode ser sua.</h3>
+      <p>
+        {{
+          view === "saved"
+            ? "Salve publicações do feed para encontrá-las aqui."
+            : "Nenhuma publicação encontrada. Compartilhe um link ou ajuste os filtros."
+        }}
+      </p>
     </div>
+  }
+
+  // App Comparison Panel component sera renderizado aqui se houver posts selecionados para comparação
+<app-comparison-panel
+  [selectedPosts]="selectedForComparison()"
+  [comparison]="comparisonResult()"
+  [loading]="comparing()"
+  [error]="comparisonError()"
+  (compareClick)="runComparison($event)"
+  (recompareClick)="runComparison($event)"
+  (removePostClick)="removeFromComparison($event)"
+  (clearClick)="clearComparison()"
+/>
+
+</div>
     @if(view==='feed'&&total>pageSize){
     <nav class="pagination" aria-label="Paginação">
       <button class="secondary" [disabled]="page===1" (click)="move(-1)">
