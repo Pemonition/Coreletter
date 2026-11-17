@@ -1,5 +1,9 @@
 # Estado da base automatizada
 
+## Decisão 0006 — monólito modular (17/11/2026)
+
+Proposta do Davidy no grupo e aceita pelo Hugo: seguir com uma solução e um banco, com os módulos de negócio (Comunidade, Radar, Comparação, Planos e quota) em projetos e comunicação entre eles só por interface. Registro em `docs/decisoes/0006-monolito-modular.md`. **Nenhuma mudança estrutural até a entrega**; a extração da Comunidade do `Program.cs` e a regra entre módulos no `ArchitectureTests` ficam para depois da banca, nessa ordem. Mudança só de documentação.
+
 ## Integração revisada — 17/11/2026
 
 Estado desta branch: `integracao/revisao-2026-11-17`, PR #38. Os merges foram feitos nesta branch; a main permanece sem essas mudanças até a revisão exigida pelo GitHub. Esta seção prevalece sobre descrições históricas abaixo quanto ao conjunto integrado.
