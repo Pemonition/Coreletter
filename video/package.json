@@ -1,0 +1,18 @@
+{
+  "name": "coreletter-video",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test gerador/*.test.mjs",
+    "gerar": "node gerador/gerar.mjs roteiros/como-funciona.json",
+    "check": "hyperframes check composicoes/como-funciona --json",
+    "preview": "hyperframes preview composicoes/como-funciona",
+    "render": "hyperframes render composicoes/como-funciona --output renders/como-funciona.mp4"
+  },
+  "devDependencies": {
+    "hyperframes": "0.9.40"
+  },
+  "dependencies": {
+    "gsap": "3.14.2"
+  }
+}

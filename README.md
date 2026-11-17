@@ -53,6 +53,9 @@ Isso executa os testes do back-end e o build Angular; testes com PostgreSQL e fl
 
 Com a API e um banco descartável em execução, `pwsh -File scripts/Test-Api.ps1` verifica cadastro, publicação, permissões e isolamento de salvos. Ele cria contas fictícias e remove a publicação de teste. A CI executa esse cenário usando PostgreSQL descartável.
 
+## Vídeos (HyperFrames)
+
+Roteiro em JSON → composição HTML/GSAP → MP4 com a marca do projeto. Primeiro vídeo: "Como o Coreletter funciona". Guia completo, com o passo a passo no Windows: [video/README.md](video/README.md).
 ## Demonstração na nuvem (Render, plano gratuito)
 
 A pasta raiz tem `Dockerfile` e `render.yaml`. Uma única imagem compila o Angular e o entrega pela própria API, então front e API ficam na mesma origem. Assim o cookie `SameSite=Strict` e a checagem de `Origin` continuam valendo, sem CORS. O Blueprint cria o PostgreSQL gratuito e o serviço web e liga um ao outro sem nenhuma senha no Git.

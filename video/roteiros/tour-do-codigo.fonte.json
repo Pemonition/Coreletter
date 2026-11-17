@@ -1,0 +1,96 @@
+{
+  "id": "tour-do-codigo",
+  "titulo": "Por dentro do Coreletter",
+  "abertura": {
+    "titulo": "Por dentro do Coreletter",
+    "texto": "Cada parte do projeto, com o código de verdade: os trechos são copiados do repositório por um script."
+  },
+  "mapa": {
+    "titulo": "O caminho de uma notícia",
+    "texto": "Coleta, triagem, agrupamento, fila, comparação, plano e tela. Embaixo de tudo: arquitetura limpa, testes e CI."
+  },
+  "partes": [
+    {
+      "titulo": "Coleta segura",
+      "texto": "O IP é conferido na hora da conexão, depois do DNS. Nenhum site da lista consegue desviar a coleta para a nossa rede interna (ataque SSRF).",
+      "arquivo": "backend/RadarPlural.Ingestion/SafeFeedFetcher.cs",
+      "linhas": [85, 89],
+      "linguagem": "csharp"
+    },
+    {
+      "titulo": "Triagem por regras, sem IA",
+      "texto": "Regras simples e testáveis: sai promoção, resumo do dia e notícia velha. Título caça-clique não sai, só ganha um aviso.",
+      "arquivo": "backend/RadarPlural.Ingestion/Triage.cs",
+      "linhas": [32, 42],
+      "linguagem": "csharp"
+    },
+    {
+      "titulo": "A mesma notícia em vários veículos",
+      "texto": "Duas manchetes são a mesma história quando dividem 3 ou mais palavras relevantes e pelo menos uma delas é nome próprio.",
+      "arquivo": "backend/RadarPlural.Ingestion/StoryClustering.cs",
+      "linhas": [109, 113],
+      "linguagem": "csharp"
+    },
+    {
+      "titulo": "Fila que roda em várias réplicas",
+      "texto": "SKIP LOCKED: cada réplica pega histórias diferentes sem esperar a outra. O lease devolve a história à fila se uma réplica cair.",
+      "arquivo": "backend/RadarPlural.Infrastructure/PgStoryQueue.cs",
+      "linhas": [15, 24],
+      "linguagem": "sql"
+    },
+    {
+      "titulo": "Sem veredito de verdade",
+      "texto": "Toda resposta do auditor passa por aqui: afirmação com 'verdadeiro' ou 'falso' é removida, e citação que não existe no texto da fonte é descartada.",
+      "arquivo": "backend/RadarPlural.Pipeline/Comparison/Contract.cs",
+      "linhas": [45, 56],
+      "linguagem": "csharp"
+    },
+    {
+      "titulo": "Regra de rentabilidade (RN02)",
+      "texto": "Preço mínimo = custo no pior caso ÷ (1 − 25%), arredondado para cima. A API não inicia se algum plano der prejuízo.",
+      "arquivo": "backend/RadarPlural.Domain/Billing/Plans.cs",
+      "linhas": [27, 32],
+      "linguagem": "csharp"
+    },
+    {
+      "titulo": "Quota sem corrida (RN03)",
+      "texto": "Conferir 'usado < quota' e somar 1 é um comando só no banco. Com 50 pedidos ao mesmo tempo e quota 10, passam exatamente 10.",
+      "arquivo": "backend/RadarPlural.Infrastructure/PgUsageLedger.cs",
+      "linhas": [39, 44],
+      "linguagem": "sql"
+    },
+    {
+      "titulo": "Arquitetura limpa vigiada por teste",
+      "texto": "Se a camada de aplicação passar a depender de banco ou de web, este teste falha. A regra da aula vira código, não só desenho.",
+      "arquivo": "backend/RadarPlural.Tests/ArchitectureTests.cs",
+      "linhas": [15, 22],
+      "linguagem": "csharp"
+    },
+    {
+      "titulo": "A tela não cobra duas vezes",
+      "texto": "Primeiro usa a comparação pública, que não gasta quota. Se precisar de uma nova, manda Idempotency-Key: clique duplo não cobra em dobro.",
+      "arquivo": "frontend/src/main.ts",
+      "linhas": [245, 258],
+      "linguagem": "ts"
+    },
+    {
+      "titulo": "Escala com teto de custo",
+      "texto": "De 2 a 5 réplicas da API conforme a CPU. O máximo é o teto: um teste lê estes arquivos e falha se o pior caso passar de R$ 800 por mês.",
+      "arquivo": "deploy/k8s/10-api.yaml",
+      "linhas": [81, 87],
+      "linguagem": "yaml"
+    },
+    {
+      "titulo": "Este vídeo também é código",
+      "texto": "Ele saiu de um roteiro em JSON. Todo texto passa por escapar(): o roteiro pode vir de IA e não pode virar código na página.",
+      "arquivo": "video/gerador/lib.mjs",
+      "linhas": [39, 46],
+      "linguagem": "js"
+    }
+  ],
+  "fechamento": {
+    "titulo": "Tudo testado a cada PR",
+    "texto": "Código em github.com/Pemonition/Coreletter. O mesmo tour, por escrito, em docs/TOUR.md."
+  },
+  "duracoes": { "abertura": 6, "mapa": 7, "parte": 13, "fechamento": 6 }
+}
