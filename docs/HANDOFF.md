@@ -1,5 +1,28 @@
 # Estado da base automatizada
 
+## Integração revisada — 17/11/2026
+
+Estado desta branch: `integracao/revisao-2026-11-17`, PR #38. Os merges foram feitos nesta branch; a main permanece sem essas mudanças até a revisão exigida pelo GitHub. Esta seção prevalece sobre descrições históricas abaixo quanto ao conjunto integrado.
+
+Incluídos, com histórico original preservado:
+
+| Branch / PR | Motivo |
+| --- | --- |
+| feat/deploy-render / #33 | Reunir entregas #24–#29 que ficaram fora da main: histórias, triagem, pipeline, planos/quota persistente e comparação simulada com tela conectada |
+| feat/catalogo-fontes / #36 | Catálogo único de 30 fontes com curadoria registrada e correção do agrupamento entre veículos |
+| test/api-cenarios-b08 / #32 | Cobrir filtros, paginação, proteção de origem e moderação com administrador |
+| feat/video-hyperframes / #30 | Material de apresentação, proposta, tour do código e gerador de vídeo |
+
+Conflito resolvido em `.github/workflows/ci.yml`, preservando a integração PostgreSQL e o fluxo administrativo. A junção do catálogo com o vídeo revelou teste de tour desatualizado: referências de `StoryClustering.cs` corrigidas e roteiro/documento/composição regenerados. Corrigida também a identificação de execução direta de `tour.mjs` no Windows usando `pathToFileURL`.
+
+Validação do commit `933502d`: localmente, 246 testes .NET passaram e 12 de PostgreSQL foram pulados sem conexão; build Angular de produção e 14 testes do gerador passaram. Na [CI da PR](https://github.com/Pemonition/Coreletter/actions/runs/44131754030), **258 testes .NET passaram, zero pulados**, com PostgreSQL real descartável; passaram também cenários HTTP de administrador/origem, frontend, vídeo e imagens/execução em container. Não houve inspeção visual, renderização MP4 nem deploy nesta revisão. Docker local indisponível; tentativa de PostgreSQL local separado não iniciou (diretório pg_notify ausente), sem alterar o serviço PostgreSQL existente.
+
+`npm ci` reportou dois alertas (um baixo e um alto); a consulta detalhada online falhou por rede/DNS. Auditoria offline sem alertas não substitui a consulta online. Não foi aplicado `audit fix --force` nem alterado lockfile.
+
+Ficaram fora: `Pemonition` / #31 e `feat/questionnaire-collection` (coleta privada precisa conciliar catálogo, esquema e rotas com o coletor integrado); `claude/frontend-visual` (carrega esse radar); `feat/arquitetura-hexagonal-k8s` / #37 (conflitos e refatoração baseada numa estrutura anterior); `feat/componentizar-main-ts` (parte da tela antiga, perde o fluxo de histórias e introduz comparação sem endpoint conectado). Nenhuma branch foi apagada.
+
+Pendências: uma aprovação humana para #38, exigida pela proteção da main; conferir os checks do último commit após qualquer atualização. Revisar leases/versão no caminho de falha da fila e idempotência de chamadas antes de provedor pago; a comparação permanece simulada. As definições antigas de arquitetura/handoff ainda precisam de consolidação mais ampla em tarefa própria. Nenhuma cobrança ou IA real foi ativada.
+
 Data: 26/10/2026. Produto Coreletter; namespaces .NET e nome técnico npm ainda RadarPlural para preservar os contratos iniciais. Isso não representa uma segunda aplicação.
 
 ## Implementado
