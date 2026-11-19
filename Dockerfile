@@ -13,8 +13,19 @@ RUN npm run build
 # global.json não é copiado: a imagem do SDK define a versão 10.0.x usada no build.
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS api
 WORKDIR /src
+# A API depende das camadas internas (Clean Architecture, docs/ARQUITETURA.md). Projeto novo referenciado
+# pela API ou pela Infrastructure precisa entrar nas DUAS listas abaixo, senão o build da imagem falha.
+# Só os .csproj primeiro: o restore fica em cache enquanto as dependências não mudam.
+COPY backend/RadarPlural.Domain/RadarPlural.Domain.csproj backend/RadarPlural.Domain/
+COPY backend/RadarPlural.Ingestion/RadarPlural.Ingestion.csproj backend/RadarPlural.Ingestion/
+COPY backend/RadarPlural.Pipeline/RadarPlural.Pipeline.csproj backend/RadarPlural.Pipeline/
+COPY backend/RadarPlural.Infrastructure/RadarPlural.Infrastructure.csproj backend/RadarPlural.Infrastructure/
 COPY backend/RadarPlural.Api/RadarPlural.Api.csproj backend/RadarPlural.Api/
 RUN dotnet restore backend/RadarPlural.Api/RadarPlural.Api.csproj
+COPY backend/RadarPlural.Domain/ backend/RadarPlural.Domain/
+COPY backend/RadarPlural.Ingestion/ backend/RadarPlural.Ingestion/
+COPY backend/RadarPlural.Pipeline/ backend/RadarPlural.Pipeline/
+COPY backend/RadarPlural.Infrastructure/ backend/RadarPlural.Infrastructure/
 COPY backend/RadarPlural.Api/ backend/RadarPlural.Api/
 RUN dotnet publish backend/RadarPlural.Api/RadarPlural.Api.csproj -c Release -o /app --no-restore
 

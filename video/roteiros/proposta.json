@@ -1,0 +1,83 @@
+{
+  "versao": 1,
+  "id": "proposta",
+  "titulo": "De pessoas para pessoas, sem algoritmo",
+  "formato": {
+    "largura": 1920,
+    "altura": 1080
+  },
+  "cenas": [
+    {
+      "tipo": "abertura",
+      "duracao": 6,
+      "titulo": "De pessoas para pessoas, sem algoritmo",
+      "texto": "Notícias e curiosidades de fontes escolhidas por gente. Você decide o que acompanhar."
+    },
+    {
+      "tipo": "texto",
+      "duracao": 7,
+      "titulo": "O problema do feed de sempre",
+      "texto": "O algoritmo aprende o que prende sua atenção e decide o que você vê. Você não sabe por quê nem como sair disso."
+    },
+    {
+      "tipo": "etapa",
+      "duracao": 9,
+      "numero": 1,
+      "titulo": "Sem algoritmo de engajamento",
+      "texto": "Cumpre. Feed e histórias em ordem cronológica.",
+      "itens": [
+        "Nenhuma métrica de clique ou recomendação",
+        "Triagem por regras públicas e testadas",
+        "Falta mostrar o que foi descartado e por quê"
+      ]
+    },
+    {
+      "tipo": "etapa",
+      "duracao": 9,
+      "numero": 2,
+      "titulo": "Fontes escolhidas por pessoas",
+      "texto": "Parcial. A equipe escolhe a lista, revisada por PR.",
+      "itens": [
+        "Comunidade compartilha com comentário",
+        "Falta escrever os critérios de qualidade",
+        "Falta você poder sugerir uma fonte"
+      ]
+    },
+    {
+      "tipo": "etapa",
+      "duracao": 9,
+      "numero": 3,
+      "titulo": "Você escolhe os assuntos",
+      "texto": "Parcial. Filtros no feed e um radar pessoal.",
+      "itens": [
+        "No radar, você escreve as regras",
+        "Sem IA deduzindo seus gostos",
+        "Falta levar o radar para as histórias"
+      ]
+    },
+    {
+      "tipo": "etapa",
+      "duracao": 9,
+      "numero": 4,
+      "titulo": "Transparência e controle",
+      "texto": "Cumpre. Cada comparação mostra trecho e link de cada fonte.",
+      "itens": [
+        "Nenhum selo de verdadeiro ou falso",
+        "Comparação pronta é pública e não gasta quota",
+        "Falta a página \"como escolhemos o que você vê\""
+      ]
+    },
+    {
+      "tipo": "texto",
+      "duracao": 7,
+      "titulo": "O modelo de negócio protege a proposta",
+      "texto": "A receita vem da assinatura, não de anúncio. Ninguém ganha dinheiro prendendo sua atenção."
+    },
+    {
+      "tipo": "fechamento",
+      "duracao": 6,
+      "titulo": "Você escolhe",
+      "texto": "Coreletter: a mesma notícia, vários veículos, sem algoritmo."
+    }
+  ]
+}

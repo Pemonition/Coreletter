@@ -1,0 +1,9 @@
+{
+  "_comentario": "Regra de teto de custo da infraestrutura (docs/AULAS.md, decisoes/0004). Preços são HIPÓTESE para o TCC: trocar pelos do provedor escolhido. O teste CostCeilingTests falha se os manifests passarem do teto.",
+  "moeda": "BRL",
+  "precoPorVcpuHora": 0.22,
+  "precoPorGibHora": 0.03,
+  "horasPorMes": 730,
+  "coletorHorasPorMes": 60,
+  "tetoMensal": 800
+}

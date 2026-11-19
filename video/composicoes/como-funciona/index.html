@@ -1,0 +1,108 @@
+<!doctype html>
+<!-- GERADO por video/gerador/gerar.mjs a partir de video/roteiros/como-funciona.json. Não edite aqui: edite o roteiro e gere de novo. -->
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <title>Como o Coreletter funciona</title>
+  <style>
+    @font-face { font-family: "DM Sans"; src: url("fontes/dm-sans-latin-400-normal.woff2") format("woff2"); font-weight: 400; }
+    @font-face { font-family: "DM Sans"; src: url("fontes/dm-sans-latin-700-normal.woff2") format("woff2"); font-weight: 700; }
+    html, body { margin: 0; width: 100%; height: 100%; background: #f5f7f6; }
+    #como-funciona { position: relative; width: 100%; height: 100%; overflow: hidden; background: #f5f7f6; color: #172c2a; font-family: "DM Sans", sans-serif; }
+    .cena { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+    .conteudo { width: 76%; display: flex; flex-direction: column; gap: 28px; }
+    .titulo { margin: 0; font-size: 84px; line-height: 1.1; font-weight: 700; letter-spacing: -0.01em; }
+    .titulo.grande { font-size: 116px; }
+    .texto { margin: 0; font-size: 48px; line-height: 1.35; color: #3c4f4b; max-width: 26em; }
+    .selo { align-self: flex-start; font-size: 26px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #16775e; background: #e2e9e4; padding: 10px 20px; border-radius: 999px; }
+    .cena-etapa .conteudo { flex-direction: row; align-items: center; gap: 56px; }
+    .numero { flex: none; width: 220px; height: 220px; border-radius: 50%; background: #16775e; color: #fff; font-size: 120px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+    .coluna { display: flex; flex-direction: column; gap: 22px; }
+    .itens { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 16px; font-size: 40px; color: #3c4f4b; }
+    .itens li::before { content: "— "; color: #16775e; font-weight: 700; }
+    .afirmacoes { display: flex; flex-direction: column; gap: 20px; }
+    .afirmacao { background: #fff; border: 1px solid #e3e6ea; border-left: 8px solid #98a2b3; border-radius: 18px; padding: 22px 30px; display: flex; flex-direction: column; gap: 10px; }
+    .afirmacao p { margin: 0; font-size: 40px; line-height: 1.3; }
+    .afirmacao small { font-size: 26px; color: #667085; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+    .chip { align-self: flex-start; font-size: 26px; font-weight: 700; padding: 6px 16px; border-radius: 999px; }
+    .chip.concordante { background: #e3f4ea; color: #1b7f4b; }
+    .afirmacao.concordante { border-left-color: #1b7f4b; }
+    .chip.divergente { background: #fbe5e6; color: #b4232d; }
+    .afirmacao.divergente { border-left-color: #b4232d; }
+    .chip.unica_fonte { background: #fdf0dc; color: #8a5000; }
+    .afirmacao.unica_fonte { border-left-color: #8a5000; }
+    .chip.evidencia_insuficiente { background: #eef0f3; color: #344054; }
+    .afirmacao.evidencia_insuficiente { border-left-color: #344054; }
+    .conteudo > :not(.aneis) { position: relative; }
+    .aneis { position: absolute; right: -14%; top: 50%; width: 48%; aspect-ratio: 1; margin-top: -24%; }
+    .aneis span { position: absolute; inset: 0; border-radius: 50%; border: 3px solid #e2e9e4; }
+    .aneis span + span { inset: 18%; background: #e2e9e4; opacity: 0.55; border: 0; }
+    .rodape { position: absolute; left: 0; right: 0; bottom: 0; height: 10px; background: #e2e9e4; }
+    .barra-progresso { width: 100%; height: 100%; background: #16775e; transform-origin: 0 50%; }
+    .marca { position: absolute; top: 48px; left: 6%; font-size: 30px; font-weight: 700; color: #16775e; }
+  </style>
+</head>
+<body>
+  <div id="como-funciona" data-composition-id="como-funciona" data-start="0" data-duration="59" data-width="1920" data-height="1080">
+    <div class="marca">coreletter</div>
+    <section id="como-funciona-c0" class="clip cena cena-abertura" data-start="0" data-duration="5" data-track-index="1">
+      <div class="conteudo"><div class="aneis"><span></span><span></span></div><div class="anima selo">Coreletter</div><h1 class="anima titulo grande">A mesma notícia, vários veículos</h1><p class="anima texto">Como o Coreletter compara a cobertura antes de você formar sua opinião.</p></div>
+    </section>
+    <section id="como-funciona-c1" class="clip cena cena-texto" data-start="5" data-duration="6" data-track-index="1">
+      <div class="conteudo"><h2 class="anima titulo ">Cada veículo conta de um jeito</h2><p class="anima texto">Um destaca um dado, outro omite um detalhe, um terceiro dá um número diferente. Lendo só um, você não vê a diferença.</p></div>
+    </section>
+    <section id="como-funciona-c2" class="clip cena cena-etapa" data-start="11" data-duration="7" data-track-index="1">
+      <div class="conteudo"><div class="anima numero">1</div><div class="coluna"><h2 class="anima titulo ">Coleta</h2><p class="anima texto">A cada 3 horas, lemos os feeds RSS de 7 veículos aprovados.</p><ul class="itens"><li class="anima">Só título, link e um resumo curto</li><li class="anima">A matéria completa fica no site do veículo</li></ul></div></div>
+    </section>
+    <section id="como-funciona-c3" class="clip cena cena-etapa" data-start="18" data-duration="7" data-track-index="1">
+      <div class="conteudo"><div class="anima numero">2</div><div class="coluna"><h2 class="anima titulo ">Triagem</h2><p class="anima texto">Regras simples tiram o que não é notícia.</p><ul class="itens"><li class="anima">Promoção e link de afiliado</li><li class="anima">Resumo do dia e notícia velha</li><li class="anima">Título caça-clique ganha um aviso</li></ul></div></div>
+    </section>
+    <section id="como-funciona-c4" class="clip cena cena-etapa" data-start="25" data-duration="7" data-track-index="1">
+      <div class="conteudo"><div class="anima numero">3</div><div class="coluna"><h2 class="anima titulo ">Agrupamento</h2><p class="anima texto">Juntamos a mesma notícia publicada por veículos diferentes numa história só.</p><ul class="itens"><li class="anima">Nomes próprios e palavras em comum</li><li class="anima">Publicadas com até 48 horas de diferença</li></ul></div></div>
+    </section>
+    <section id="como-funciona-c5" class="clip cena cena-comparacao" data-start="32" data-duration="10" data-track-index="1">
+      <div class="conteudo"><h2 class="anima titulo ">Comparação das fontes</h2><div class="afirmacoes"><div class="anima afirmacao concordante"><span class="chip concordante">Concordam</span><p>Os três veículos noticiam o mesmo vazamento de dados.</p><small>Veículo A · Veículo B · Veículo C</small></div><div class="anima afirmacao unica_fonte"><span class="chip unica_fonte">Só uma fonte</span><p>Só um veículo diz quantos clientes foram afetados.</p><small>Veículo B</small></div><div class="anima afirmacao divergente"><span class="chip divergente">Divergem</span><p>As datas do ataque não batem entre as fontes.</p><small>Veículo A · Veículo C</small></div></div></div>
+    </section>
+    <section id="como-funciona-c6" class="clip cena cena-texto" data-start="42" data-duration="6" data-track-index="1">
+      <div class="conteudo"><h2 class="anima titulo ">Sem selo de verdade</h2><p class="anima texto">Mostramos onde as fontes concordam e divergem, sempre com o trecho e o link. A conclusão é sua.</p></div>
+    </section>
+    <section id="como-funciona-c7" class="clip cena cena-texto" data-start="48" data-duration="6" data-track-index="1">
+      <div class="conteudo"><h2 class="anima titulo ">Grátis para começar</h2><p class="anima texto">3 comparações por mês no plano Grátis e 60 no Plus. Comparação já feita não gasta nada.</p></div>
+    </section>
+    <section id="como-funciona-c8" class="clip cena cena-fechamento" data-start="54" data-duration="5" data-track-index="1">
+      <div class="conteudo"><div class="aneis"><span></span><span></span></div><h2 class="anima titulo grande">Leia mais de um lado</h2><p class="anima texto">Coreletter: a mesma notícia, vários veículos.</p><div class="anima selo">coreletter</div></div>
+    </section>
+    <div class="rodape"><div class="barra-progresso"></div></div>
+  </div>
+  <script src="assets/gsap.min.js"></script>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      tl.fromTo(".barra-progresso", { scaleX: 0 }, { scaleX: 1, duration: 59, ease: "none" }, 0);
+      tl.fromTo("#como-funciona-c0 .aneis", { rotation: -25, scale: 0.85 }, { rotation: 0, scale: 1, duration: 5, ease: "none" }, 0);
+      tl.fromTo("#como-funciona-c0 .anima", { opacity: 0, y: 36 }, { opacity: 1, y: 0, duration: 0.6, stagger: 0.18, ease: "power2.out" }, 0.15);
+      tl.fromTo("#como-funciona-c0 .conteudo", { opacity: 1 }, { opacity: 0, duration: 0.35, ease: "power1.in" }, 4.6);
+      tl.fromTo("#como-funciona-c1 .anima", { opacity: 0, y: 36 }, { opacity: 1, y: 0, duration: 0.6, stagger: 0.18, ease: "power2.out" }, 5.15);
+      tl.fromTo("#como-funciona-c1 .conteudo", { opacity: 1 }, { opacity: 0, duration: 0.35, ease: "power1.in" }, 10.6);
+      tl.fromTo("#como-funciona-c2 .anima", { opacity: 0, y: 36 }, { opacity: 1, y: 0, duration: 0.6, stagger: 0.18, ease: "power2.out" }, 11.15);
+      tl.fromTo("#como-funciona-c2 .conteudo", { opacity: 1 }, { opacity: 0, duration: 0.35, ease: "power1.in" }, 17.6);
+      tl.fromTo("#como-funciona-c3 .anima", { opacity: 0, y: 36 }, { opacity: 1, y: 0, duration: 0.6, stagger: 0.18, ease: "power2.out" }, 18.15);
+      tl.fromTo("#como-funciona-c3 .conteudo", { opacity: 1 }, { opacity: 0, duration: 0.35, ease: "power1.in" }, 24.6);
+      tl.fromTo("#como-funciona-c4 .anima", { opacity: 0, y: 36 }, { opacity: 1, y: 0, duration: 0.6, stagger: 0.18, ease: "power2.out" }, 25.15);
+      tl.fromTo("#como-funciona-c4 .conteudo", { opacity: 1 }, { opacity: 0, duration: 0.35, ease: "power1.in" }, 31.6);
+      tl.fromTo("#como-funciona-c5 .anima", { opacity: 0, y: 36 }, { opacity: 1, y: 0, duration: 0.6, stagger: 0.18, ease: "power2.out" }, 32.15);
+      tl.fromTo("#como-funciona-c5 .conteudo", { opacity: 1 }, { opacity: 0, duration: 0.35, ease: "power1.in" }, 41.6);
+      tl.fromTo("#como-funciona-c6 .anima", { opacity: 0, y: 36 }, { opacity: 1, y: 0, duration: 0.6, stagger: 0.18, ease: "power2.out" }, 42.15);
+      tl.fromTo("#como-funciona-c6 .conteudo", { opacity: 1 }, { opacity: 0, duration: 0.35, ease: "power1.in" }, 47.6);
+      tl.fromTo("#como-funciona-c7 .anima", { opacity: 0, y: 36 }, { opacity: 1, y: 0, duration: 0.6, stagger: 0.18, ease: "power2.out" }, 48.15);
+      tl.fromTo("#como-funciona-c7 .conteudo", { opacity: 1 }, { opacity: 0, duration: 0.35, ease: "power1.in" }, 53.6);
+      tl.fromTo("#como-funciona-c8 .aneis", { rotation: -25, scale: 0.85 }, { rotation: 0, scale: 1, duration: 5, ease: "none" }, 54);
+      tl.fromTo("#como-funciona-c8 .anima", { opacity: 0, y: 36 }, { opacity: 1, y: 0, duration: 0.6, stagger: 0.18, ease: "power2.out" }, 54.15);
+      tl.fromTo("#como-funciona-c8 .conteudo", { opacity: 1 }, { opacity: 0, duration: 0.35, ease: "power1.in" }, 58.6);
+      window.__timelines = window.__timelines || {};
+      window.__timelines["como-funciona"] = tl;
+    })();
+  </script>
+</body>
+</html>
+<!-- assinatura:f58e857e8bc81a0a -->

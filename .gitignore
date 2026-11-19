@@ -12,3 +12,4 @@
 TestResults/
 artifacts/
 .vs/
+backend/RadarPlural.Api/wwwroot/

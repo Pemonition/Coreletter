@@ -23,7 +23,7 @@ O contrato concreto da base está em `backend/API.md`. Mudanças devem atualizar
 ## Decisões
 | Decisão | Motivo | Quando rever |
 |---|---|---|
-| Monólito e banco único | Prazo de três semanas e equipe pequena | Gargalo medido |
+| Monólito modular e banco único (decisoes/0006): módulos de negócio em projetos, um falando com o outro só por interface; escala por processo no Kubernetes | Transação atômica na quota, equipe pequena, prazo; os ganhos de escala já vêm de réplicas por processo | Gargalo medido, ritmo de deploy diferente ou isolamento exigido (ex.: auditor com IA paga) |
 | Feed com filtros e paginação | Fluxo previsível e demonstrável | Evidência de uso justifica recomendações |
 | Compartilhamento manual primeiro | Valida utilidade sem depender de coleta externa | Núcleo estável e fontes permitidas definidas |
 | Coleta só de RSS/Atom de fontes aprovadas, por Worker agendado | Política de ingestão (decisoes/0002): feeds públicos, metadados curtos, travas de SSRF e limites | Fonte essencial sem feed, ou fontes de usuário |

@@ -26,4 +26,15 @@ O build verifica TypeScript e templates estritos. `npm test` é somente uma veri
 7. Quando uma conta de administrador estiver configurada pelo backend, confira a lista de denúncias e o comando de ocultação.
 8. Desligue a API e atualize o feed: deve haver erro explícito, sem dados fictícios substituindo a resposta.
 
-Não há comparação de fontes, cobrança, publicação em redes sociais, scraping ou transcrição de áudio nesta primeira fatia. Essas funções são próximas etapas; a interface informa a ausência de comparação com IA.
+## Histórias e comparação de fontes (B02/B06, versão básica)
+
+A visão **Histórias e fontes** lista as histórias contadas por 2 ou mais veículos (`GET /api/stories?minSources=2`) e, em cada uma, o botão **Comparar fontes**:
+
+1. Primeiro tenta a comparação já feita (`GET /api/stories/{id}/comparison`). É pública e não gasta quota.
+2. Se ainda não existe e a pessoa está logada, pede uma (`POST /api/comparisons` com `Idempotency-Key`). Isso gasta 1 uso do plano (RN01/RN03, `docs/RENTABILIDADE.md`). Sem login, abre a tela de entrar.
+3. Mostra o que as fontes concordam, onde divergem e o que só uma fonte diz, sempre com o trecho e o nome da fonte; as limitações ficam num bloco recolhível; comparações simuladas levam o aviso "simulada (regras, sem IA)".
+4. O topo mostra o uso do mês (`GET /api/me/usage`): "Plano Grátis · 1 de 3 comparações no mês".
+
+Para testar com dados reais: rode o coletor (`dotnet run --project backend/RadarPlural.Worker`) e depois a auditoria (`... -- --etapa auditoria --lote 5`). Contrato da resposta: `docs/contratos/`.
+
+Publicação em redes sociais, vídeo e transcrição de áudio são próximas etapas.

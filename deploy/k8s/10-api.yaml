@@ -1,0 +1,98 @@
+# API + front (mesma imagem do Render). Sem estado: sessão em cookie, chaves de proteção no banco,
+# então qualquer réplica atende qualquer usuário e dá para escalar horizontalmente.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coreletter-api
+  namespace: coreletter
+  labels: { app: coreletter-api }
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: coreletter-api }
+  # Troca as cópias uma a uma, sem ficar sem nenhuma (aula 1, 09/11). Volta atrás: kubectl rollout undo.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate: { maxUnavailable: 0, maxSurge: 1 }
+  template:
+    metadata:
+      labels: { app: coreletter-api }
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        - name: api
+          image: coreletter-api:local
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: coreletter-config
+            - secretRef:
+                name: coreletter-secrets
+          # Limites definem o custo máximo de cada réplica (regra de teto de custo, custo.json).
+          resources:
+            requests: { cpu: 100m, memory: 128Mi }
+            limits: { cpu: 500m, memory: 256Mi }
+          # Vivo: não consulta o banco (queda do banco não reinicia a API à toa).
+          livenessProbe:
+            httpGet: { path: /api/health, port: http }
+            periodSeconds: 10
+            failureThreshold: 3
+          # Pronto: consulta o banco; sem banco, a réplica sai da rotação do Service até voltar.
+          readinessProbe:
+            httpGet: { path: /api/health/ready, port: http }
+            periodSeconds: 5
+            failureThreshold: 2
+          startupProbe:
+            httpGet: { path: /api/health, port: http }
+            periodSeconds: 2
+            failureThreshold: 30
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities: { drop: ["ALL"] }
+---
+# Endereço fixo na frente das réplicas (aula 2): os pods mudam de IP, o Service não.
+apiVersion: v1
+kind: Service
+metadata:
+  name: coreletter-api
+  namespace: coreletter
+spec:
+  selector: { app: coreletter-api }
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+---
+# Escala automática por CPU, com TETO: maxReplicas limita o custo (dica do professor: escala presa ao custo).
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: coreletter-api
+  namespace: coreletter
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: coreletter-api
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target: { type: Utilization, averageUtilization: 70 }
+---
+# Durante manutenção do node, pelo menos 1 réplica continua no ar.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: coreletter-api
+  namespace: coreletter
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels: { app: coreletter-api }

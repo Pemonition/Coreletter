@@ -19,7 +19,25 @@ var port = Environment.GetEnvironmentVariable("PORT");
 builder.WebHost.UseUrls(string.IsNullOrWhiteSpace(port) ? "http://localhost:5080" : $"http://0.0.0.0:{port}");
 builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestBodySize = 32768);
 
-builder.Services.AddDbContext<AppDb>(o => o.UseNpgsql(DatabaseUrl.ToNpgsql(builder.Configuration.GetConnectionString("Default") ?? throw new InvalidOperationException("Configure ConnectionStrings__Default para PostgreSQL."))));
+var npgsqlConnection = DatabaseUrl.ToNpgsql(builder.Configuration.GetConnectionString("Default") ?? throw new InvalidOperationException("Configure ConnectionStrings__Default para PostgreSQL."));
+builder.Services.AddDbContext<AppDb>(o => o.UseNpgsql(npgsqlConnection));
+// Adaptadores da Infrastructure (arquitetura limpa: a API compõe, o domínio só conhece as portas).
+builder.Services.AddSingleton(_ => Npgsql.NpgsqlDataSource.Create(npgsqlConnection));
+builder.Services.AddSingleton<RadarPlural.Domain.Billing.IUsageLedger, RadarPlural.Infrastructure.PgUsageLedger>();
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<RadarPlural.Pipeline.IStoryReader, RadarPlural.Infrastructure.PgStoryReader>();
+builder.Services.AddSingleton<RadarPlural.Pipeline.IAuditStore, RadarPlural.Infrastructure.PgAuditStore>();
+// Auditor da comparação: simulado (B05). Trocar por Gemini (B09) é registrar outro IAuditor aqui.
+builder.Services.AddSingleton<RadarPlural.Pipeline.IAuditor, RadarPlural.Infrastructure.SimulatedAuditor>();
+builder.Services.AddSingleton<RadarPlural.Pipeline.Comparison.CompareStory>();
+
+// RN02 na inicialização: nenhum plano oferecido pode dar prejuízo no pior caso. Se der, a API não sobe.
+foreach (var plan in RadarPlural.Domain.Billing.PlanCatalog.All)
+{
+    var check = RadarPlural.Domain.Billing.Profitability.Check(plan, RadarPlural.Domain.Billing.PlanCatalog.Assumptions);
+    if (check != RadarPlural.Domain.Billing.PlanCheck.Ok)
+        throw new InvalidOperationException($"Plano '{plan.Id}' viola a regra de rentabilidade: {check}.");
+}
 
 // Chaves que protegem o cookie ficam no banco: reinício ou novo deploy do container não derruba as sessões.
 builder.Services.AddDataProtection().PersistKeysToDbContext<AppDb>().SetApplicationName("coreletter");
@@ -46,6 +64,9 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
 });
 
 builder.Services.AddAuthorization();
+// Limite por IP. Memória de cada réplica: com N réplicas o limite efetivo é até N× (decisoes/0004).
+// Configurável (RateLimit__PermitPerMinute) para teste de carga; padrão 60.
+var permitPerMinute = builder.Configuration.GetValue("RateLimit:PermitPerMinute", 60);
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -54,7 +75,7 @@ builder.Services.AddRateLimiter(options =>
             context.Connection.RemoteIpAddress?.ToString() ?? "local",
             _ => new System.Threading.RateLimiting.FixedWindowRateLimiterOptions
             {
-                PermitLimit = 60,
+                PermitLimit = permitPerMinute,
                 Window = TimeSpan.FromMinutes(1),
                 QueueLimit = 0
             }));
@@ -84,11 +105,25 @@ app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Migrações versionadas em todos os ambientes; o administrador é promovido só se a conta já existir.
+// Migrações versionadas; o administrador é promovido só se a conta já existir.
+// Com várias réplicas (Kubernetes), migrar ao iniciar causa disputa: testado com 2 instâncias juntas, uma caiu com
+// "column already exists" (decisoes/0004). Por isso:
+//   --migrate-only                 aplica as migrações e sai (Job "coreletter-migrate" roda antes das réplicas);
+//   Database__MigrateOnStartup=false   réplicas não migram (padrão true mantém Render e uso local como estão).
+var migrateOnly = args.Contains("--migrate-only");
+if (migrateOnly || builder.Configuration.GetValue("Database:MigrateOnStartup", true))
+{
+    using var scope = app.Services.CreateScope();
+    await scope.ServiceProvider.GetRequiredService<AppDb>().Database.MigrateAsync();
+    if (migrateOnly)
+    {
+        app.Logger.LogInformation("Migrações aplicadas (--migrate-only).");
+        return;
+    }
+}
 {
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDb>();
-    await db.Database.MigrateAsync();
     var adminEmail = builder.Configuration["BootstrapAdminEmail"];
     if (!string.IsNullOrWhiteSpace(adminEmail))
     {
@@ -100,7 +135,25 @@ app.UseAuthorization();
         }
     }
 }
+// Vivo (liveness): só diz que o processo responde. NÃO consulta o banco: se consultasse, uma queda do banco
+// faria o Kubernetes reiniciar todas as réplicas da API à toa (decisoes/0004).
 app.MapGet("/api/health", () => Results.Ok(new { status = "ok" }));
+// Pronto (readiness): só recebe tráfego a réplica que alcança o banco. Falha = 503, o Service tira a réplica da rotação.
+app.MapGet("/api/health/ready", async (AppDb db, CancellationToken ct) =>
+{
+    using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
+    timeout.CancelAfter(TimeSpan.FromSeconds(2));
+    try
+    {
+        return await db.Database.CanConnectAsync(timeout.Token)
+            ? Results.Ok(new { status = "ready" })
+            : Results.Json(new { status = "unavailable" }, statusCode: 503);
+    }
+    catch (Exception e) when (e is OperationCanceledException or System.Net.Sockets.SocketException or Npgsql.NpgsqlException)
+    {
+        return Results.Json(new { status = "unavailable" }, statusCode: 503);
+    }
+});
 
 app.MapPost("/api/auth/register", async (RegisterInput input, AppDb db, IPasswordHasher<Member> hasher, HttpContext ctx) =>
 {
@@ -162,7 +215,7 @@ app.MapGet("/api/news", async (AppDb db, int page = 1, int pageSize = 20, string
 {
     if (page < 1 || page > 1000000) return Error("Página deve estar entre 1 e 1000000.");
     pageSize = Math.Clamp(pageSize, 1, 50);
-    var q = db.FeedItems.AsNoTracking();
+    var q = db.FeedItems.AsNoTracking().Where(x => x.Status == "triado");
     if (!string.IsNullOrWhiteSpace(topic)) q = q.Where(x => x.Topic == topic.Trim().ToLower());
     if (!string.IsNullOrWhiteSpace(source)) q = q.Where(x => x.SourceId == source.Trim());
     var total = await q.CountAsync();
@@ -171,6 +224,33 @@ app.MapGet("/api/news", async (AppDb db, int page = 1, int pageSize = 20, string
         .Select(x => new { x.Id, x.SourceId, x.SourceName, x.Topic, x.Url, x.Title, x.Summary, x.PublishedAt, x.CollectedAt })
         .ToListAsync();
     return Results.Ok(new { items, page, pageSize, total });
+}).RequireRateLimiting("api");
+
+// Histórias: a mesma notícia em veículos diferentes (agrupamento do Worker). minSources=2 mostra só as corroboradas.
+app.MapGet("/api/stories", async (AppDb db, int page = 1, int pageSize = 20, string? topic = null, int minSources = 1) =>
+{
+    if (page < 1 || page > 1000000) return Error("Página deve estar entre 1 e 1000000.");
+    pageSize = Math.Clamp(pageSize, 1, 50);
+    minSources = Math.Clamp(minSources, 1, 50);
+    var q = db.Stories.AsNoTracking().Where(x => x.SourceCount >= minSources);
+    if (!string.IsNullOrWhiteSpace(topic)) q = q.Where(x => x.Topic == topic.Trim().ToLower());
+    var total = await q.CountAsync();
+    var stories = await q.OrderByDescending(x => x.LastPublishedAt).ThenByDescending(x => x.Id)
+        .Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+    var ids = stories.Select(x => x.Id).ToList();
+    var items = await db.FeedItems.AsNoTracking().Where(x => x.StoryId != null && ids.Contains(x.StoryId.Value) && x.Status == "triado")
+        .OrderBy(x => x.PublishedAt ?? x.CollectedAt)
+        .Select(x => new { x.Id, StoryId = x.StoryId!.Value, x.SourceId, x.SourceName, x.Url, x.Title, x.PublishedAt })
+        .ToListAsync();
+    return Results.Ok(new
+    {
+        items = stories.Select(s => new
+        {
+            s.Id, s.Title, s.Topic, s.Status, s.SourceCount, s.ItemCount, s.FirstPublishedAt, s.LastPublishedAt,
+            items = items.Where(i => i.StoryId == s.Id).Select(i => new { i.Id, i.SourceId, i.SourceName, i.Url, i.Title, i.PublishedAt })
+        }),
+        page, pageSize, total
+    });
 }).RequireRateLimiting("api");
 
 app.MapGet("/api/posts/saved", async (HttpContext ctx, AppDb db) =>
@@ -225,6 +305,74 @@ app.MapPost("/api/posts/{id:guid}/reports", async (Guid id, ReportInput input, H
     return Results.NoContent();
 }).RequireAuthorization().RequireRateLimiting("api");
 
+// Planos e números da regra de rentabilidade (RN01–RN04). Público: transparência para o usuário e demo na banca.
+app.MapGet("/api/plans", () =>
+{
+    var c = RadarPlural.Domain.Billing.PlanCatalog.Assumptions;
+    return Results.Ok(new
+    {
+        assumptions = new { c.CostPerComparison, c.DeliveryCostPerPaid, c.MinimumMargin, c.MaxFreeCostPerUser, c.FixedMonthlyCost, hypothetical = true },
+        plans = RadarPlural.Domain.Billing.PlanCatalog.All.Select(p => new
+        {
+            p.Id, p.Name, p.MonthlyPrice, p.MonthlyComparisons,
+            maxVariableCost = RadarPlural.Domain.Billing.Profitability.MaxVariableCost(p, c),
+            margin = RadarPlural.Domain.Billing.Profitability.Margin(p, c),
+            minimumPrice = p.MonthlyPrice > 0 ? RadarPlural.Domain.Billing.Profitability.MinimumPrice(p, c) : (decimal?)null,
+            breakEvenSubscribers = p.MonthlyPrice > 0 ? RadarPlural.Domain.Billing.Profitability.BreakEvenSubscribers(p, c) : (int?)null
+        })
+    });
+});
+
+// Uso do mês do usuário logado (RN01).
+app.MapGet("/api/me/usage", async (HttpContext ctx, AppDb db, RadarPlural.Domain.Billing.IUsageLedger ledger, CancellationToken ct) =>
+{
+    var memberId = Id(ctx);
+    var member = await db.Members.AsNoTracking().SingleOrDefaultAsync(x => x.Id == memberId, ct);
+    if (member is null) return Results.Unauthorized();
+    var plan = RadarPlural.Domain.Billing.PlanCatalog.Find(member.PlanId);
+    var now = DateTimeOffset.UtcNow;
+    return Results.Ok(new { planId = plan.Id, planName = plan.Name, month = RadarPlural.Domain.Billing.UsageRules.MonthKey(now), used = await ledger.UsedAsync(member.Id, now, ct), quota = plan.MonthlyComparisons });
+}).RequireAuthorization().RequireRateLimiting("api");
+
+// Sem pagamento real no TCC: o administrador troca o plano para demonstrar upgrade/downgrade.
+app.MapPut("/api/admin/members/{id:guid}/plan", async (Guid id, PlanInput input, AppDb db) =>
+{
+    if (RadarPlural.Domain.Billing.PlanCatalog.All.All(p => p.Id != input.PlanId)) return Error("Plano inexistente.");
+    var member = await db.Members.SingleOrDefaultAsync(x => x.Id == id);
+    if (member is null) return Results.NotFound();
+    member.PlanId = input.PlanId!;
+    await db.SaveChangesAsync();
+    return Results.NoContent();
+}).RequireAuthorization(p => p.RequireRole("admin"));
+
+// Comparação mais recente de uma história (contrato v1). Pública. "outdated" = a história mudou depois.
+app.MapGet("/api/stories/{id:guid}/comparison", async (Guid id, RadarPlural.Pipeline.IAuditStore audits, RadarPlural.Pipeline.IStoryReader stories, CancellationToken ct) =>
+{
+    var latest = await audits.LatestAsync(id, ct);
+    if (latest is null) return Results.NotFound(new { error = "Esta história ainda não foi comparada.", code = "ainda_nao_comparada" });
+    var story = await stories.ReadAsync(id, ct);
+    return Results.Ok(new { comparison = latest.Value.Result, outdated = story is not null && story.Version != latest.Value.StoryVersion });
+}).RequireRateLimiting("api");
+
+// Comparar agora (contrato v1 + RN01/RN03): cache de 24 h não gasta quota; Idempotency-Key evita cobrança dupla.
+app.MapPost("/api/comparisons", async (CompareInput input, HttpContext ctx, AppDb db, RadarPlural.Pipeline.Comparison.CompareStory compare, CancellationToken ct) =>
+{
+    if (input.StoryId is not { } storyId) return Results.BadRequest(new { error = "Informe storyId.", code = "entrada_invalida" });
+    var key = Guid.TryParse(ctx.Request.Headers["Idempotency-Key"], out var k) ? k : Guid.NewGuid();
+    var memberId = Id(ctx);
+    var member = await db.Members.AsNoTracking().SingleOrDefaultAsync(x => x.Id == memberId, ct);
+    if (member is null) return Results.Unauthorized();
+    var outcome = await compare.RunAsync(member.Id, RadarPlural.Domain.Billing.PlanCatalog.Find(member.PlanId), storyId, key, ct);
+    return outcome.ErrorCode switch
+    {
+        null => Results.Ok(new { comparison = outcome.Result, usage = new { units = outcome.Units, fromCache = outcome.FromCache } }),
+        "historia_inexistente" => Results.NotFound(new { error = "História não encontrada.", code = outcome.ErrorCode }),
+        "entrada_invalida" => Results.BadRequest(new { error = "A história precisa de 2 ou mais fontes para comparar.", code = outcome.ErrorCode }),
+        "quota_esgotada" => Results.Json(new { error = "Você usou todas as comparações do seu plano neste mês.", code = outcome.ErrorCode }, statusCode: 403),
+        _ => Results.Json(new { error = "O comparador está indisponível. Nada foi descontado da sua quota.", code = outcome.ErrorCode }, statusCode: 503)
+    };
+}).RequireAuthorization().RequireRateLimiting("api");
+
 app.MapGet("/api/moderation/reports", async (AppDb db) => Results.Ok(await db.Reports.AsNoTracking().OrderByDescending(x => x.CreatedAt).ThenByDescending(x => x.Id).Take(100).Select(x => new { x.Id, x.PostId, x.Reason, x.CreatedAt }).ToListAsync())).RequireAuthorization(p => p.RequireRole("admin"));
 
 app.MapPut("/api/moderation/posts/{id:guid}/hide", async (Guid id, AppDb db) =>
@@ -253,3 +401,5 @@ static Task SignIn(HttpContext ctx, Member user)
     return ctx.SignInAsync(new ClaimsPrincipal(new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme)));
 }
 public partial class Program { }
+record PlanInput(string? PlanId);
+record CompareInput(Guid? StoryId);

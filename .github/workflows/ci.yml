@@ -7,6 +7,8 @@ permissions:
 jobs:
   backend:
     runs-on: ubuntu-latest
+    env:
+      ADMIN_CI_PASSWORD: disposable-ci-admin-password
     services:
       postgres:
         image: postgres:17-alpine
@@ -26,22 +28,39 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
-      - run: dotnet test backend/RadarPlural.slnx --configuration Release
-      - name: Iniciar API com PostgreSQL descartavel
+      - name: Testes (unitários + integração com PostgreSQL)
+        env:
+          # Servidor descartável: os testes criam e apagam bancos temporários.
+          INTEGRATION_DATABASE_URL: Host=localhost;Port=5432;Database=coreletter_ci;Username=coreletter_ci;Password=disposable-ci-only-password
+        run: dotnet test backend/RadarPlural.slnx --configuration Release
+      - name: Iniciar API com PostgreSQL descartavel (e conta de administrador ficticia)
         env:
           ASPNETCORE_ENVIRONMENT: Development
           ConnectionStrings__Default: Host=localhost;Port=5432;Database=coreletter_ci;Username=coreletter_ci;Password=disposable-ci-only-password
+          BootstrapAdminEmail: admin-ci@example.invalid
+        # O administrador so e promovido na inicializacao e se a conta ja existir (Program.cs, BootstrapAdminEmail):
+        # sobe a API, cadastra a conta, reinicia a API.
         run: |
-          dotnet run --no-build --no-launch-profile --configuration Release --project backend/RadarPlural.Api > /tmp/coreletter-api.log 2>&1 &
-          for attempt in $(seq 1 30); do
-            if curl --fail --silent http://localhost:5080/api/health; then exit 0; fi
-            sleep 2
-          done
-          cat /tmp/coreletter-api.log
-          exit 1
-      - name: Testar API e isolamento entre contas
+          start_api() {
+            dotnet run --no-build --no-launch-profile --configuration Release --project backend/RadarPlural.Api >> /tmp/coreletter-api.log 2>&1 &
+            echo $! > /tmp/coreletter-api.pid
+            for attempt in $(seq 1 30); do
+              if curl --fail --silent http://localhost:5080/api/health > /dev/null; then return 0; fi
+              sleep 2
+            done
+            cat /tmp/coreletter-api.log
+            return 1
+          }
+          start_api
+          curl --fail --silent --show-error -H 'Content-Type: application/json' \
+            -d '{"email":"admin-ci@example.invalid","password":"${{ env.ADMIN_CI_PASSWORD }}","displayName":"Admin CI"}' \
+            http://localhost:5080/api/auth/register > /dev/null
+          pkill -f 'RadarPlural.Api' || true
+          for attempt in $(seq 1 15); do curl --silent http://localhost:5080/api/health > /dev/null || break; sleep 1; done
+          start_api
+      - name: Testar API, isolamento entre contas, filtros, origem e administrador
         shell: pwsh
-        run: ./scripts/Test-Api.ps1
+        run: ./scripts/Test-Api.ps1 -AdminEmail admin-ci@example.invalid -AdminPassword $env:ADMIN_CI_PASSWORD
       - name: Diagnostico de falha da API
         if: failure()
         run: cat /tmp/coreletter-api.log || true
@@ -59,6 +78,15 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
       - run: npm run build
+  video:
+    # Gerador de vídeos (video/README.md): valida roteiros, regras do HyperFrames e composição em dia com o roteiro.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.21.0'
+      - run: node --test video/gerador/*.test.mjs
   container:
     # Valida a imagem de deploy: build Angular + API, migrações num PostgreSQL vazio e front servido pela API.
     runs-on: ubuntu-latest
@@ -78,7 +106,23 @@ jobs:
           --health-retries 15
     steps:
       - uses: actions/checkout@v5
+      - name: Validar manifests do Kubernetes (esquema oficial)
+        run: >-
+          docker run --rm -v "$PWD/deploy/k8s:/k8s:ro" ghcr.io/yannh/kubeconform:v0.6.7
+          -strict -summary -kubernetes-version 1.31.0 -ignore-filename-pattern "(kustomization\.yaml|custo\.json)$" /k8s
       - run: docker build -t coreletter .
+      - run: docker build -f Dockerfile.worker -t coreletter-worker .
+      - name: Migração como passo único (o que o Job do Kubernetes faz)
+        run: >-
+          docker run --rm --network host
+          -e "ConnectionStrings__Default=postgresql://coreletter_ci:disposable-ci-only-password@localhost:5432/coreletter_ci"
+          coreletter --migrate-only
+      - name: Worker inicia na imagem
+        run: |
+          set +e
+          docker run --rm coreletter-worker --etapa inexistente
+          code=$?
+          test "$code" -eq 2 || { echo "esperado código 2 (etapa inexistente), veio $code"; exit 1; }
       - name: Iniciar container
         # Development aqui so para o cookie aceitar http no teste; em producao o cookie exige https.
         run: |
