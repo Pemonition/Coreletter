@@ -1,5 +1,6 @@
 # Contrato API
 Base `/api`; autenticação cookie HttpOnly (proxy Angular para http://localhost:5080). JSON camelCase. Erros `{error:string}`; validação HTTP400; não autenticado401; sem permissão403.
+Documentação interativa: abra `/docs` com a API rodando (ex.: http://localhost:5080/docs). O contrato OpenAPI fica em `/openapi/v1.json`.
 - POST /auth/register {email,password,displayName} -> 200 {id,email,displayName,isAdmin}; senha >=10 caracteres. Login automático.
 - POST /auth/login {email,password} -> mesmo DTO.
 - POST /auth/logout ->204
