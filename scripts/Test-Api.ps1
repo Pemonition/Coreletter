@@ -96,6 +96,8 @@ try {
         Expect (Request PUT "/moderation/posts/$($taskPost.id)/hide" $taskAdmin) 204 'Administrador oculta'
         $f = Json (Request GET '/posts?pageSize=50' $taskSessionB)
         Check (@($f.items | Where-Object id -eq $taskPost.id).Count -eq 0) 'Publicacao oculta some do feed'
+        $reports = Json (Request GET '/moderation/reports' $taskAdmin)
+        Check (@($reports | Where-Object postId -eq $taskPost.id).Count -eq 0) 'Denuncia de item oculto sai da fila de moderacao'
         Expect (Request POST "/posts/$($taskPost.id)/reports" $taskSessionB @{reason='Denuncia de item oculto'}) 404 'Nao denuncia item oculto'
         Expect (Request PUT "/moderation/posts/$([guid]::NewGuid())/hide" $taskAdmin) 404 'Ocultar id inexistente da 404'
     } else {
