@@ -1,12 +1,22 @@
 # Estado da base automatizada
 
+## Estado vigente — validação de 23/11/2026
+
+A PR #38 foi aprovada e integrada em 19/11/2026 (`68d08dd`); a main consultada já inclui a PR #41 (`d3f4725`, retirada de denúncias de publicações ocultadas da fila). As pendências de aprovação da #38 citadas no histórico abaixo estão encerradas.
+
+Trabalho local em `fix/validacao-local-20261123`: corrigidos alertas npm com Angular build 22.2.5/Vite 8.3.5 e compiler-cli 22.2.3 explícito; removido arquivo acidental de diff com nome inválido no Windows; bloqueada nova comparação gratuita quando uma chave de idempotência já usada não tem cache reutilizável. Mantido o contrato de indisponibilidade existente, sem IA paga ou cobrança real.
+
+Validação executada **localmente** com PostgreSQL 17 descartável separado: **258 testes .NET aprovados, zero pulados**; builds Angular produção/desenvolvimento; auditoria npm online sem vulnerabilidades reportadas; 14 testes de vídeo; cenários HTTP de publicação, isolamento, moderação, cache, chave repetida e quota aprovados. Teste de regressão de idempotência registrado RED antes da correção e GREEN depois. Interface conferida em desktop 1280×900 e celular 390×844, sem overflow horizontal; cadastro, publicação/salvamento, comparação simulada, consumo 1→2→3 e bloqueio da quarta comparação observados.
+
+Comandos, limites, evidências e roteiro reproduzível: [validação local](VALIDACAO-LOCAL-2026-11-23.md). Prompt reutilizável para outros projetos: [quatro ciclos de revisão](PROMPT-REVISAO-CONTINUA.md). As novas alterações ainda dependem de PR/CI/revisão antes do merge; não houve deploy. Docker segue indisponível e os feeds reais não foram testados nesta rodada. Alterações paralelas em documentos de aulas/Kubernetes foram preservadas fora deste trabalho.
+
 ## Decisão 0006 — monólito modular (17/11/2026)
 
 Proposta do Davidy no grupo e aceita pelo Hugo: seguir com uma solução e um banco, com os módulos de negócio (Comunidade, Radar, Comparação, Planos e quota) em projetos e comunicação entre eles só por interface. Registro em `docs/decisoes/0006-monolito-modular.md`. **Nenhuma mudança estrutural até a entrega**; a extração da Comunidade do `Program.cs` e a regra entre módulos no `ArchitectureTests` ficam para depois da banca, nessa ordem. Mudança só de documentação.
 
-## Integração revisada — 17/11/2026
+## Histórico: integração revisada — 17/11/2026
 
-Estado desta branch: `integracao/revisao-2026-11-17`, PR #38. Os merges foram feitos nesta branch; a main permanece sem essas mudanças até a revisão exigida pelo GitHub. Esta seção prevalece sobre descrições históricas abaixo quanto ao conjunto integrado.
+Estado naquela data: `integracao/revisao-2026-11-17`, PR #38. Os merges foram preparados nessa branch e aguardavam revisão. Posteriormente a PR foi aprovada e integrada em 19/11; consulte o estado vigente acima.
 
 Incluídos, com histórico original preservado:
 
@@ -25,7 +35,7 @@ Validação do commit `933502d`: localmente, 246 testes .NET passaram e 12 de Po
 
 Ficaram fora: `Pemonition` / #31 e `feat/questionnaire-collection` (coleta privada precisa conciliar catálogo, esquema e rotas com o coletor integrado); `claude/frontend-visual` (carrega esse radar); `feat/arquitetura-hexagonal-k8s` / #37 (conflitos e refatoração baseada numa estrutura anterior); `feat/componentizar-main-ts` (parte da tela antiga, perde o fluxo de histórias e introduz comparação sem endpoint conectado). Nenhuma branch foi apagada.
 
-Pendências: uma aprovação humana para #38, exigida pela proteção da main; conferir os checks do último commit após qualquer atualização. Revisar leases/versão no caminho de falha da fila e idempotência de chamadas antes de provedor pago; a comparação permanece simulada. As definições antigas de arquitetura/handoff ainda precisam de consolidação mais ampla em tarefa própria. Nenhuma cobrança ou IA real foi ativada.
+Pendências registradas naquela data: aprovação da #38 (concluída em 19/11) e revisão de leases/versão e idempotência antes de provedor pago. A correção de chave repetida em 23/11 fecha um desses caminhos; expiração, cancelamento e coordenação com provedor real ainda exigem revisão própria. A comparação permanece simulada. Nenhuma cobrança ou IA real foi ativada.
 
 Data: 26/10/2026. Produto Coreletter; namespaces .NET e nome técnico npm ainda RadarPlural para preservar os contratos iniciais. Isso não representa uma segunda aplicação.
 
