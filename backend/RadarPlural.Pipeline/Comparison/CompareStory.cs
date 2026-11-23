@@ -23,6 +23,10 @@ public sealed class CompareStory(IStoryReader reader, IAuditor auditor, IAuditSt
         // RN03: reserva ANTES de chamar o provedor.
         var reservation = await ledger.ReserveAsync(memberId, plan, idempotencyKey, clock.GetUtcNow(), ct);
         if (reservation == ReserveResult.QuotaExceeded) return new(null, "quota_esgotada", 0, false);
+        // Sem resultado reutilizável acima, uma chave já usada não autoriza outra execução gratuita.
+        // Pode ser uma requisição em andamento, falha anterior ou chave reaproveitada em outra história.
+        // Mantém a resposta de indisponibilidade existente; nova tentativa sem cache usa uma nova chave.
+        if (reservation == ReserveResult.AlreadyReserved) return new(null, "provedor_indisponivel", 0, false);
         var charged = reservation == ReserveResult.Reserved;
         try
         {
