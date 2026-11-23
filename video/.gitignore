@@ -1,3 +1,4 @@
 node_modules/
 renders/
+.hyperframes/
 *.mp4

@@ -10,7 +10,7 @@
     "render": "hyperframes render composicoes/como-funciona --output renders/como-funciona.mp4"
   },
   "devDependencies": {
-    "hyperframes": "0.9.40"
+    "hyperframes": "0.9.42"
   },
   "dependencies": {
     "gsap": "3.14.2"

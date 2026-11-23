@@ -39,7 +39,7 @@ roteiros/<id>.json  ──►  gerador/gerar.mjs  ──►  composicoes/<id>/in
 
 ## Passo a passo no Windows (PowerShell)
 
-Pré-requisitos: Node 22+ e o HyperFrames desktop instalado (ele traz o FFmpeg). Versões fixadas em `video/package.json` e no lockfile: **HyperFrames 0.9.40** e **GSAP 3.14.2**. É a combinação já validada no PC do Hugo (PR #31).
+Pré-requisitos: Node 22+ e o HyperFrames desktop instalado (ele traz o FFmpeg). Versões fixadas em `video/package.json` e no lockfile: **HyperFrames 0.9.42** e **GSAP 3.14.2**. A atualização de segurança de 23/11 substitui Undici 7.25.0 por 7.30.1; a renderização MP4 com esta versão ainda precisa de ensaio.
 
 1. Entre na pasta: `cd video`
 2. Instale as versões fixadas: `npm ci --ignore-scripts`

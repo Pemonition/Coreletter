@@ -1,5 +1,19 @@
 # Estado da base automatizada
 
+## Retomada dos quatro ciclos — 23/11/2026
+
+Validação final da atualização: `npm test --prefix video` **14/14**, `npm run check --prefix video` **zero erros e 12 avisos** (10 lint, 2 craft), nove amostras de execução e 472 de composição; não equivale a render MP4. Relatório local em `video/composicoes/como-funciona/.hyperframes/artifacts/checks/f35253bb-614f-48f0-b8f7-5327207f8a1b.json`. `npm audit --prefix video --json` e frontend: **zero vulnerabilidades**; `dotnet list backend/RadarPlural.slnx package --vulnerable --include-transitive --format json`: nenhum pacote vulnerável nos sete projetos. `git diff --check` aprovado. Saída automática `.hyperframes/` agora ignorada no Git. Alterações preparadas com assistência de IA; não representam revisão humana.
+
+Entrega mantida local, sem nova PR. Após revisão: `git push -u origin docs/revisao-quatro-ciclos-20261123`; depois `gh pr create --base main --head docs/revisao-quatro-ciclos-20261123 --title 'fix(video): atualizar HyperFrames para corrigir Undici' --body 'Atualiza HyperFrames 0.9.40 para 0.9.42 e Undici 7.25.0 para 7.30.1, sem overrides. Auditorias npm/NuGet sem alertas; 14 testes de video aprovados; check com zero erros e 12 avisos. MP4 ainda precisa de ensaio. Detalhes e limites em docs/HANDOFF.md.'`. Revisão humana exigida antes do merge.
+
+Base conferida: `origin/main` em `77e49ef`; PR #42 integrada e CI da main [45283179302](https://github.com/Pemonition/Coreletter/actions/runs/45283179302) aprovada nos quatro jobs (backend, frontend, vídeo e container). O texto abaixo sobre aguardar PR da validação anterior é histórico. Nenhum deploy foi confirmado.
+
+Branch desta retomada: `docs/revisao-quatro-ciclos-20261123`. Detectada lacuna na auditoria de vídeo: HyperFrames 0.9.40 fixava Undici 7.25.0, com alertas altos. Atualizado somente HyperFrames para 0.9.42 (primeira versão seguinte fora do intervalo vulnerável reportado), que fixa Undici 7.30.1, mantendo GSAP e o restante do lockfile. Sem force/overrides. Alcance: ferramenta local de vídeo; não é dependência da API/frontend publicados. Avisos primários: [TLS](https://github.com/nodejs/undici/security/advisories/GHSA-2m5v-pch6-74hx) e [DoS](https://github.com/nodejs/undici/security/advisories/GHSA-xjj6-f33q-929c). A presença da dependência não demonstra exploração no produto.
+
+Nesta retomada: `npm audit --prefix frontend --json` sem alertas; `dotnet list backend/RadarPlural.slnx package --vulnerable --include-transitive --format json` sem pacotes vulneráveis nos sete projetos; instalação do vídeo após atualização sem alertas; `npm test --prefix video`: 14 aprovados, zero pulados. Não foram repetidos build, PostgreSQL e cenários HTTP já aprovados: código da aplicação idêntico à validação anterior, logs locais conferidos (258/258, zero pulados), além da CI verde da main. Capturas desktop/mobile existentes foram inspecionadas nesta retomada; não houve nova sessão manual da aplicação. Estados de carregamento/vazio/erro e acessibilidade completos não estão comprovados pelas capturas. Evidências e roteiro reproduzível permanecem em [VALIDACAO-LOCAL-2026-11-23.md](VALIDACAO-LOCAL-2026-11-23.md).
+
+Docker local continua indisponível (pipe do engine ausente). Não foram executados feeds reais, IA paga, cobrança, deploy ou render MP4. Alterações preexistentes em `deploy/k8s/README.md`, `docs/AULAS.md` e `docs/EVIDENCIAS-AULAS.md` foram preservadas e ficam fora desta entrega. Próxima ação: revisar o diff de segurança do vídeo, executar CI na branch quando publicada e ensaiar MP4 antes da apresentação. Não confundir a CI da base com validação remota desta atualização.
+
 ## Estado vigente — validação de 23/11/2026
 
 A PR #38 foi aprovada e integrada em 19/11/2026 (`68d08dd`); a main consultada já inclui a PR #41 (`d3f4725`, retirada de denúncias de publicações ocultadas da fila). As pendências de aprovação da #38 citadas no histórico abaixo estão encerradas.
