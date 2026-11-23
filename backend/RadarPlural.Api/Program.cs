@@ -373,7 +373,8 @@ app.MapPost("/api/comparisons", async (CompareInput input, HttpContext ctx, AppD
     };
 }).RequireAuthorization().RequireRateLimiting("api");
 
-app.MapGet("/api/moderation/reports", async (AppDb db) => Results.Ok(await db.Reports.AsNoTracking().OrderByDescending(x => x.CreatedAt).ThenByDescending(x => x.Id).Take(100).Select(x => new { x.Id, x.PostId, x.Reason, x.CreatedAt }).ToListAsync())).RequireAuthorization(p => p.RequireRole("admin"));
+// Denúncia de publicação já ocultada está resolvida: sai da fila de moderação (docs/PRODUCAO.md, item 6).
+app.MapGet("/api/moderation/reports", async (AppDb db) => Results.Ok(await db.Reports.AsNoTracking().Where(x => db.Posts.Any(p => p.Id == x.PostId && !p.Hidden)).OrderByDescending(x => x.CreatedAt).ThenByDescending(x => x.Id).Take(100).Select(x => new { x.Id, x.PostId, x.Reason, x.CreatedAt }).ToListAsync())).RequireAuthorization(p => p.RequireRole("admin"));
 
 app.MapPut("/api/moderation/posts/{id:guid}/hide", async (Guid id, AppDb db) =>
 {
