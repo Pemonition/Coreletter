@@ -1,0 +1,23 @@
+@if (comparison().simulated) {
+  <p>Comparação simulada</p>
+}
+
+<p>{{ comparison().summary.concordantes }} concordam</p>
+<p>{{ comparison().summary.divergentes }} divergem</p>
+<p>{{ comparison().summary.unicaFonte }} só uma fonte</p>
+
+@for (claim of comparison().claims; track claim.id) {
+  <div>
+    <strong>{{ statusLabel(claim.status) }}</strong>
+    <p>{{ claim.text }}</p>
+
+    @for (e of claim.evidence; track $index) {
+      <p>{{ sourceName(e.itemId) }}: "{{ e.quote }}"</p>
+    }
+  </div>
+}
+
+<p>Limitações desta comparação</p>
+@for (limitation of comparison().limitations; track $index) {
+  <p>{{ limitation }}</p>
+}
