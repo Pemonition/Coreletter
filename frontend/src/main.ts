@@ -79,6 +79,16 @@ class App {
   password = "";
   displayName = "";
   topic = "";
+  storyTopic = "";
+  storyTopics = [
+  { value: "tecnologia", label: "Tecnologia" },
+  { value: "ia", label: "Inteligência artificial" },
+  { value: "ciencia", label: "Ciência" },
+  { value: "espaco", label: "Espaço" },
+  { value: "economia", label: "Economia" },
+  { value: "brasil-e-mundo", label: "Brasil e mundo" },
+  { value: "curiosidades", label: "Curiosidades" },
+  ];
   type = "";
   page = 1;
   total = 0;
@@ -130,15 +140,22 @@ class App {
     this.loading.set(true);
     this.error.set("");
     try {
+    
       if (this.view === "stories") {
-        const result = await this.api<{ items: Story[]; total: number }>(
-          "/stories?" + new URLSearchParams({ minSources: "2", page: String(this.page), pageSize: String(this.pageSize) }),
-        );
-        this.stories.set(result.items);
-        this.total = result.total;
-        if (this.user()) void this.loadUsage();
-        return;
-      }
+  const params = new URLSearchParams({
+    minSources: "2",
+    page: String(this.page),
+    pageSize: String(this.pageSize),
+  });
+  if (this.storyTopic) params.set("topic", this.storyTopic);
+
+  const result = await this.api<{ items: Story[]; total: number }>("/stories?" + params);
+
+  this.stories.set(result.items);
+  this.total = result.total;
+  if (this.user()) void this.loadUsage();
+  return;
+}
       if (this.view === "moderation") {
         this.reports.set(await this.api<Report[]>("/moderation/reports"));
         return;

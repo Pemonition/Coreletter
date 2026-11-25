@@ -96,7 +96,16 @@
         </select></label
       ><button class="secondary" type="submit">Filtrar</button>
     </form>
-    } @if(loading()){
+    } 
+    @if(view==='stories'){
+ 
+    Tema
+    Todos os temas
+    @for(t of storyTopics;track t.value){{{t.label}}}
+      
+       }
+    
+    @if(loading()){
     <div class="empty" role="status">Carregando descobertas…</div>
     }@else if(view==='stories'){
     <div class="stories">
@@ -129,7 +138,7 @@
         }
       </article>
       }@empty{
-      <div class="empty">Ainda não há histórias contadas por 2 ou mais fontes. O coletor roda a cada 3 horas.</div>
+      {{storyTopic ? 'Nenhuma história com 2 ou mais fontes neste tema ainda.' : 'Ainda não há histórias contadas por 2 ou mais fontes. O coletor roda a cada 3 horas.'}}
       }
     </div>
     }@else if(view==='moderation'){@for(report of reports();track report.id){
