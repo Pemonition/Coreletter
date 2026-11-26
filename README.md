@@ -6,7 +6,7 @@ Comunidade de tecnologia e IA para compartilhar links de notícias, podcasts e m
 
 Base inicial publicada: ASP.NET Core .NET 10, PostgreSQL e Angular. O primeiro incremento cobre autenticação, feed com filtros e paginação, publicação/exclusão, salvamento privado e denúncia/moderação. [CI inicial aprovada](https://github.com/Pemonition/Coreletter/actions/runs/40426458380), incluindo cenário de API com PostgreSQL. Consulte backend/API.md para os contratos e docs/HANDOFF.md para limites e validações.
 
-Comparação premium com IA, scraping controlado e integração financeira persistente são próximas entregas. Compartilhar uma URL não baixa seu conteúdo. Não há transcrição de áudio, cobrança real, postagem em redes sociais ou IA real conectada nesta base.
+Esta base já inclui coleta RSS/Atom controlada, histórias entre veículos, comparação **simulada**, planos e quota persistente. IA real e cobrança continuam fora da entrega. Compartilhar uma URL não baixa seu conteúdo. Não há transcrição de áudio ou postagem em redes sociais. Consulte a [validação local de 23/11](docs/VALIDACAO-LOCAL-2026-11-23.md) para evidências, limites e roteiro de demonstração sem internet.
 
 ## Executar no PowerShell
 

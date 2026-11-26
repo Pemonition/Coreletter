@@ -297,11 +297,15 @@ public class CompareStoryTests
     }
 
     [Fact]
-    public async Task RepeatedKeyDoesNotChargeAgain()
+    public async Task RepeatedKeyWithoutReusableResultDoesNotRunAnotherComparison()
     {
         var ledger = new Ledger(RadarPlural.Domain.Billing.ReserveResult.AlreadyReserved);
-        var r = await Sut(ContractFixtures.Concordante, new Store(), ledger).RunAsync(Guid.NewGuid(), Plan, ContractFixtures.Story, Guid.NewGuid(), default);
-        Assert.Null(r.ErrorCode); Assert.Equal(0, r.Units); Assert.Equal(0, ledger.Settles);
+        var store = new Store();
+        var r = await Sut(ContractFixtures.Concordante, store, ledger).RunAsync(Guid.NewGuid(), Plan, ContractFixtures.Story, Guid.NewGuid(), default);
+        Assert.Equal("provedor_indisponivel", r.ErrorCode);
+        Assert.Null(r.Result);
+        Assert.Equal(0, store.Saves);
+        Assert.Equal((0, 0, 0), (r.Units, ledger.Settles, ledger.Releases));
     }
 
     [Fact]

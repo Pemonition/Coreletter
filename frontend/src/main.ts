@@ -2,6 +2,8 @@ import { Component, signal } from "@angular/core";
 import { bootstrapApplication } from "@angular/platform-browser";
 import { CommonModule } from "@angular/common";
 import { FormsModule } from "@angular/forms";
+import { Comparison } from "./comparison";
+import { ComparisonPanel } from "./comparison-panel";
 
 interface User {
   id: string;
@@ -39,27 +41,7 @@ interface Story {
   lastPublishedAt: string;
   items: StorySource[];
 }
-interface Evidence {
-  itemId: string;
-  quote: string;
-}
-interface Claim {
-  id: string;
-  text: string;
-  status: "concordante" | "divergente" | "unica_fonte" | "evidencia_insuficiente";
-  supportedBy: string[];
-  contradictedBy: string[];
-  evidence: Evidence[];
-}
-interface Comparison {
-  provider: string;
-  simulated: boolean;
-  createdAt: string;
-  sources: { itemId: string; sourceId: string; sourceName: string; url: string; title: string }[];
-  claims: Claim[];
-  summary: { concordantes: number; divergentes: number; unicaFonte: number; evidenciaInsuficiente: number };
-  limitations: string[];
-}
+ 
 interface Usage {
   planName: string;
   used: number;
@@ -74,7 +56,7 @@ interface Report {
 @Component({
   selector: "app-root",
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, ComparisonPanel],
   templateUrl: "./app.html",
 })
 class App {
@@ -97,6 +79,16 @@ class App {
   password = "";
   displayName = "";
   topic = "";
+  storyTopic = "";
+  storyTopics = [
+  { value: "tecnologia", label: "Tecnologia" },
+  { value: "ia", label: "Inteligência artificial" },
+  { value: "ciencia", label: "Ciência" },
+  { value: "espaco", label: "Espaço" },
+  { value: "economia", label: "Economia" },
+  { value: "brasil-e-mundo", label: "Brasil e mundo" },
+  { value: "curiosidades", label: "Curiosidades" },
+  ];
   type = "";
   page = 1;
   total = 0;
@@ -148,15 +140,22 @@ class App {
     this.loading.set(true);
     this.error.set("");
     try {
+    
       if (this.view === "stories") {
-        const result = await this.api<{ items: Story[]; total: number }>(
-          "/stories?" + new URLSearchParams({ minSources: "2", page: String(this.page), pageSize: String(this.pageSize) }),
-        );
-        this.stories.set(result.items);
-        this.total = result.total;
-        if (this.user()) void this.loadUsage();
-        return;
-      }
+  const params = new URLSearchParams({
+    minSources: "2",
+    page: String(this.page),
+    pageSize: String(this.pageSize),
+  });
+  if (this.storyTopic) params.set("topic", this.storyTopic);
+
+  const result = await this.api<{ items: Story[]; total: number }>("/stories?" + params);
+
+  this.stories.set(result.items);
+  this.total = result.total;
+  if (this.user()) void this.loadUsage();
+  return;
+}
       if (this.view === "moderation") {
         this.reports.set(await this.api<Report[]>("/moderation/reports"));
         return;
@@ -267,12 +266,7 @@ class App {
       this.comparing.set("");
     }
   }
-  sourceName(comparison: Comparison, itemId: string) {
-    return comparison.sources.find((s) => s.itemId === itemId)?.sourceName ?? "Fonte";
-  }
-  statusLabel(status: Claim["status"]) {
-    return { concordante: "Concordam", divergente: "Divergem", unica_fonte: "Só uma fonte", evidencia_insuficiente: "Sem evidência suficiente" }[status];
-  }
+ 
   select(view: string) {
     if (view !== "feed" && view !== "stories" && !this.user()) {
       this.authOpen = true;
