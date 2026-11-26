@@ -12,6 +12,8 @@ using Microsoft.EntityFrameworkCore;
 
 using RadarPlural.Api;
 
+using Scalar.AspNetCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Plataformas de hospedagem informam a porta em PORT; localmente a API continua em localhost:5080.
@@ -25,6 +27,8 @@ builder.Services.AddDbContext<AppDb>(o => o.UseNpgsql(npgsqlConnection));
 builder.Services.AddSingleton(_ => Npgsql.NpgsqlDataSource.Create(npgsqlConnection));
 builder.Services.AddSingleton<RadarPlural.Domain.Billing.IUsageLedger, RadarPlural.Infrastructure.PgUsageLedger>();
 builder.Services.AddSingleton(TimeProvider.System);
+// Documentação interativa da API (Regulamento, seção 6): contrato em /openapi/v1.json e tela em /docs.
+builder.Services.AddOpenApi();
 builder.Services.AddSingleton<RadarPlural.Pipeline.IStoryReader, RadarPlural.Infrastructure.PgStoryReader>();
 builder.Services.AddSingleton<RadarPlural.Pipeline.IAuditStore, RadarPlural.Infrastructure.PgAuditStore>();
 // Auditor da comparação: simulado (B05). Trocar por Gemini (B09) é registrar outro IAuditor aqui.
@@ -102,6 +106,9 @@ app.UseDefaultFiles();
 app.UseStaticFiles();
 
 app.UseRateLimiter();
+
+app.MapOpenApi();
+app.MapScalarApiReference("/docs");
 app.UseAuthentication();
 app.UseAuthorization();
 
