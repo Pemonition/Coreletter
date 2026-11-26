@@ -105,7 +105,7 @@
       "titulo": "A tela não cobra duas vezes",
       "texto": "Primeiro usa a comparação pública, que não gasta quota. Se precisar de uma nova, manda Idempotency-Key: clique duplo não cobra em dobro.",
       "arquivo": "frontend/src/main.ts",
-      "linha": 245,
+      "linha": 244,
       "linguagem": "ts",
       "codigo": "try {\n  comparison = (await this.api<{ comparison: Comparison }>(`/stories/${story.id}/comparison`)).comparison;\n} catch {}\nif (!comparison) {\n  if (!this.user()) {\n    this.authOpen = true;\n    this.notice.set(\"Entre na sua conta para pedir uma comparação.\");\n    return;\n  }\n  const result = await this.api<{ comparison: Comparison; usage: { units: number; fromCache: boolean } }>(\"/comparisons\", {\n    method: \"POST\",\n    headers: { \"Idempotency-Key\": crypto.randomUUID() },\n    body: JSON.stringify({ storyId: story.id }),\n  });"
     },
