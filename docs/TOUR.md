@@ -159,7 +159,7 @@ public void ApplicationLayerDependsOnlyOnTheDomain()
 
 Primeiro usa a comparação pública, que não gasta quota. Se precisar de uma nova, manda Idempotency-Key: clique duplo não cobra em dobro.
 
-`frontend/src/main.ts`, linhas 245–258:
+`frontend/src/main.ts`, linhas 244–257:
 
 ```ts
 try {

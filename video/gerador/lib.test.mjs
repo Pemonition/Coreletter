@@ -151,21 +151,37 @@ test("cena de código: valida, escapa e não deixa trecho grande demais", async 
   assert.doesNotMatch(composicao(JSON.parse(await readFile(new URL("../roteiros/como-funciona.json", import.meta.url), "utf8"))), /JetBrains/);
 });
 
-test("tour do código: roteiro em dia com a fonte e com os arquivos reais", async () => {
-  const { trecho } = await import("./tour.mjs");
+test("tour: trecho é achado pelo texto, não pelo número da linha", async () => {
+  const { localizar } = await import("./tour.mjs");
+  const antes = "a\nb\nfunction alvo() {\n  return 1;\n}\n";
+  const depois = "linha nova\n" + antes; // alguém mexeu em OUTRA parte do arquivo
+  const ancora = { de: "function alvo()", ate: "}" };
+  assert.deepEqual(localizar(antes, ancora), [3, 5]);
+  assert.deepEqual(localizar(depois, ancora), [4, 6]);
+  assert.deepEqual(localizar(antes, { ...ancora, antes: 1 }), [2, 5]);
+  assert.throws(() => localizar(antes + "function alvo() {}\n", ancora), /aparece em 2/);
+  assert.throws(() => localizar(antes, { de: "sumiu", ate: "}" }), /aparece em 0/);
+  assert.throws(() => localizar(antes, { de: "function alvo()", ate: "nunca" }), /não encontrado/);
+});
+
+test("tour do código: roteiro em dia com a fonte e com os arquivos reais", async (t) => {
+  const { trecho, localizar } = await import("./tour.mjs");
   const { existsSync } = await import("node:fs");
   const fonte = JSON.parse(await readFile(new URL("../roteiros/tour-do-codigo.fonte.json", import.meta.url), "utf8"));
   const salvo = JSON.parse(await readFile(new URL("../roteiros/tour-do-codigo.json", import.meta.url), "utf8"));
   assert.deepEqual(validarRoteiro(salvo), []);
   const codigo = salvo.cenas.filter((c) => c.tipo === "codigo");
-  assert.deepEqual(codigo.map((c) => [c.titulo, c.arquivo, c.linha]), fonte.partes.map((p) => [p.titulo, p.arquivo, p.linhas[0]]), "roteiro desatualizado: rode node video/gerador/tour.mjs");
-  // Confere cada trecho contra o arquivo real. Arquivo que ainda não está nesta branch (antes da #33 entrar) é pulado.
+  assert.deepEqual(codigo.map((c) => [c.titulo, c.arquivo]), fonte.partes.map((p) => [p.titulo, p.arquivo]), "roteiro desatualizado: rode node video/gerador/tour.mjs");
+  // Falha só quando o CÓDIGO mostrado mudou (o vídeo estaria mentindo). Se o trecho apenas desceu ou subiu no arquivo
+  // porque outra parte mudou, o teste passa e só avisa: o número da linha se atualiza na próxima geração do tour.
   const raiz = new URL("../../", import.meta.url);
   let conferidos = 0;
   for (const [i, p] of fonte.partes.entries()) {
     if (!existsSync(new URL(p.arquivo, raiz))) continue;
-    const real = trecho(await readFile(new URL(p.arquivo, raiz), "utf8"), p.linhas);
-    assert.equal(codigo[i].codigo, real, `${p.arquivo} mudou: rode node video/gerador/tour.mjs --docs docs/TOUR.md`);
+    const conteudo = await readFile(new URL(p.arquivo, raiz), "utf8");
+    const linhas = localizar(conteudo, p, p.arquivo);
+    assert.equal(codigo[i].codigo, trecho(conteudo, linhas), `${p.arquivo}: o trecho "${p.titulo}" mudou; rode node video/gerador/tour.mjs --docs docs/TOUR.md`);
+    if (codigo[i].linha !== linhas[0]) t.diagnostic(`${p.arquivo}: trecho agora começa na linha ${linhas[0]} (roteiro diz ${codigo[i].linha}); gere o tour de novo quando quiser`);
     conferidos++;
   }
   assert.ok(conferidos >= 1, "nenhum arquivo do tour encontrado");
