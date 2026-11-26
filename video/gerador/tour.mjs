@@ -16,6 +16,20 @@ import { validarRoteiro, VERSAO_ROTEIRO } from "./lib.mjs";
 const aqui = dirname(fileURLToPath(import.meta.url));
 const raizRepo = resolve(aqui, "..", "..");
 
+// Acha as linhas do trecho pelo TEXTO, não pelo número: refatorar outra parte do arquivo não quebra o tour.
+// de: texto que aparece em UMA linha só do arquivo (é onde o trecho começa); antes: quantas linhas acima dela incluir;
+// ate: o trecho termina na primeira linha, a partir de "de", que contém este texto.
+// Se o código do trecho mudar de verdade (ou sair do arquivo), o erro aparece aqui ou no teste. É o que queremos.
+export function localizar(conteudo, { de, ate, antes = 0 }, arquivo = "arquivo") {
+  const linhas = conteudo.replace(/\r\n/g, "\n").split("\n");
+  const achados = linhas.flatMap((l, i) => (l.includes(de) ? [i] : []));
+  if (achados.length !== 1) throw new Error(`${arquivo}: "${de}" deveria aparecer em 1 linha e aparece em ${achados.length}; escolha um texto mais específico`);
+  const inicio = achados[0] - antes;
+  const fim = linhas.findIndex((l, i) => i >= achados[0] && l.includes(ate));
+  if (inicio < 0 || fim < 0) throw new Error(`${arquivo}: fim do trecho "${ate}" não encontrado depois de "${de}"`);
+  return [inicio + 1, fim + 1];
+}
+
 // Copia as linhas [a, b] (contando de 1) e tira o recuo comum, sem mudar mais nada.
 export function trecho(conteudo, [a, b]) {
   const linhas = conteudo.replace(/\r\n/g, "\n").split("\n").slice(a - 1, b);
@@ -29,16 +43,20 @@ export function montarRoteiro(fonte, lerArquivo) {
   const cenas = [
     { tipo: "abertura", duracao: d.abertura, ...fonte.abertura },
     { tipo: "texto", duracao: d.mapa, ...fonte.mapa },
-    ...fonte.partes.map((p) => ({
-      tipo: "codigo",
-      duracao: d.parte,
-      titulo: p.titulo,
-      texto: p.texto,
-      arquivo: p.arquivo,
-      linha: p.linhas[0],
-      linguagem: p.linguagem,
-      codigo: trecho(lerArquivo(p.arquivo), p.linhas),
-    })),
+    ...fonte.partes.map((p) => {
+      const conteudo = lerArquivo(p.arquivo);
+      const linhas = localizar(conteudo, p, p.arquivo);
+      return {
+        tipo: "codigo",
+        duracao: d.parte,
+        titulo: p.titulo,
+        texto: p.texto,
+        arquivo: p.arquivo,
+        linha: linhas[0],
+        linguagem: p.linguagem,
+        codigo: trecho(conteudo, linhas),
+      };
+    }),
     { tipo: "fechamento", duracao: d.fechamento, ...fonte.fechamento },
   ];
   return { versao: VERSAO_ROTEIRO, id: fonte.id, titulo: fonte.titulo, formato: { largura: 1920, altura: 1080 }, cenas };

@@ -6,7 +6,7 @@ Usos planejados (issue #20):
 
 - **Vídeo da equipe:** "Como o Coreletter funciona" (59 s, `roteiros/como-funciona.json`).
 - **Proposta:** "De pessoas para pessoas, sem algoritmo" (1 min, `roteiros/proposta.json`): os 4 compromissos e quanto cumprimos (`docs/PROPOSTA.md`).
-- **Tour pelo código:** "Por dentro do Coreletter" (2min42, `roteiros/tour-do-codigo.json`), cada parte com o trecho real. Gerado por `gerador/tour.mjs` a partir de `roteiros/tour-do-codigo.fonte.json`; o mesmo script escreve `docs/TOUR.md`. Se o código mudar, um teste avisa: rode `node video/gerador/tour.mjs --docs docs/TOUR.md` e gere de novo.
+- **Tour pelo código:** "Por dentro do Coreletter" (2min42, `roteiros/tour-do-codigo.json`), cada parte com o trecho real. Gerado por `gerador/tour.mjs` a partir de `roteiros/tour-do-codigo.fonte.json`; o mesmo script escreve `docs/TOUR.md`. Cada trecho é achado pelo **texto** (`de`, `antes`, `ate` na fonte), não pelo número da linha: mexer em outra parte do arquivo não quebra o CI, só avisa que a linha mudou. Se o código do próprio trecho mudar, o teste falha: rode `node video/gerador/tour.mjs --docs docs/TOUR.md` e gere de novo.
 - **Abertura do TCC** e **artigo da plataforma:** o mesmo vídeo, ou um corte dele.
 - **Tutoriais para o usuário:** como comparar fontes, planos etc.
 - **Produto:** o vídeo-resumo de cada história, gerado pelo pipeline (auditor → roteirista → vídeo, `docs/decisoes/0003`).

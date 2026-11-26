@@ -28,6 +28,7 @@ function Expect($Response, [int]$Status, [string]$Name) {
 }
 Expect (Request GET '/health' $taskSessionA) 200 'Vivo (liveness, sem banco)'
 Expect (Request GET '/health/ready' $taskSessionA) 200 'Pronto (readiness, com banco)'
+Expect (Invoke-WebRequest -Uri "$BaseUrl/openapi/v1.json" -SkipHttpErrorCheck) 200 'Contrato OpenAPI publicado'
 Expect (Request GET '/auth/me' $taskSessionA) 401 'Anonimo nao recebe identidade'
 foreach ($taskPair in @(@{Session=$taskSessionA;Name='Leitor A';Email="a-$taskSuffix@example.invalid"},@{Session=$taskSessionB;Name='Leitor B';Email="b-$taskSuffix@example.invalid"})) {
     Expect (Request POST '/auth/register' $taskPair.Session @{email=$taskPair.Email;password=$taskPassword;displayName=$taskPair.Name}) 200 'Cadastro ficticio e sessao'
