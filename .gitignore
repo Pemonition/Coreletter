@@ -13,3 +13,8 @@ TestResults/
 artifacts/
 .vs/
 backend/RadarPlural.Api/wwwroot/
+
+# Dependências npm ficam em frontend/ e video/; um package.json na raiz é instalação por engano.
+/package.json
+/package-lock.json
+/node_modules/
