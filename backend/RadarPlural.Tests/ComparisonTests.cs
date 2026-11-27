@@ -302,7 +302,7 @@ public class CompareStoryTests
         var ledger = new Ledger(RadarPlural.Domain.Billing.ReserveResult.AlreadyReserved);
         var store = new Store();
         var r = await Sut(ContractFixtures.Concordante, store, ledger).RunAsync(Guid.NewGuid(), Plan, ContractFixtures.Story, Guid.NewGuid(), default);
-        Assert.Equal("provedor_indisponivel", r.ErrorCode);
+        Assert.Equal("chave_reutilizada", r.ErrorCode);
         Assert.Null(r.Result);
         Assert.Equal(0, store.Saves);
         Assert.Equal((0, 0, 0), (r.Units, ledger.Settles, ledger.Releases));

@@ -140,6 +140,7 @@ if (migrateOnly || builder.Configuration.GetValue("Database:MigrateOnStartup", t
         if (admin is not null)
         {
             admin.IsAdmin = true;
+            admin.PlanId = RadarPlural.Domain.Billing.PlanCatalog.Plus.Id;
             await db.SaveChangesAsync();
         }
         // Sem o e-mail no log (dado pessoal); o aviso basta para saber se a promoção aconteceu.
@@ -381,6 +382,15 @@ app.MapPost("/api/comparisons", async (CompareInput input, HttpContext ctx, AppD
         "historia_inexistente" => Results.NotFound(new { error = "História não encontrada.", code = outcome.ErrorCode }),
         "entrada_invalida" => Results.BadRequest(new { error = "A história precisa de 2 ou mais fontes para comparar.", code = outcome.ErrorCode }),
         "quota_esgotada" => Results.Json(new { error = "Você usou todas as comparações do seu plano neste mês.", code = outcome.ErrorCode }, statusCode: 403),
+        "chave_reutilizada" => Results.Problem(
+            title: "Chave de idempotência já utilizada.",
+            detail: "Esta chave de idempotência já foi usada em outra comparação. Gere uma nova chave para tentar novamente.",
+            statusCode: StatusCodes.Status409Conflict,
+            extensions: new Dictionary<string, object?>
+            {
+                ["code"] = outcome.ErrorCode,
+                ["error"] = "Esta chave de idempotência já foi usada em outra comparação. Gere uma nova chave para tentar novamente."
+            }),
         _ => Results.Json(new { error = "O comparador está indisponível. Nada foi descontado da sua quota.", code = outcome.ErrorCode }, statusCode: 503)
     };
 }).RequireAuthorization().RequireRateLimiting("api");

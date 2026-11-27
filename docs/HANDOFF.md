@@ -1,5 +1,12 @@
 # Estado da base automatizada
 
+## Estado vigente — `fix/49-ajustes` (26/11/2026)
+
+Ajustes D1 e D2 (`correcao_49.md`):
+- **D1 (`chave_reutilizada`)**: `CompareStory` passou a retornar `chave_reutilizada` quando `ReserveResult.AlreadyReserved` ocorre sem resultado em cache; `POST /api/comparisons` mapeia para HTTP `409` em `ProblemDetails` com `code: "chave_reutilizada"` (mantendo `error` para compatibilidade). `scripts/Test-Comparisons.ps1`, `backend/API.md`, `docs/contratos/comparacao-v1.md` e `docs/RENTABILIDADE.md` atualizados. Pendente: avisar `@LindomarSSJ` para exibir mensagem própria no frontend para o novo `code`.
+- **D2 (`BootstrapAdminEmail`)**: promoção de administrador no bootstrap (`backend/RadarPlural.Api/Program.cs`) agora atribui `PlanId = "plus"` (60 comparações/mês), sem criar exceção na regra de quota. Mantida a comparação `adminEmail.ToLowerInvariant()` sem `Trim()`, aguardando a issue H4 (`@Pemonition`).
+- **TDD (RED → GREEN)**: RED registrado com **3 falhas esperadas** (`CompareStoryTests.RepeatedKeyWithoutReusableResultDoesNotRunAnotherComparison`, `ApiComparisonIntegrationTests.ReusedIdempotencyKeyAcrossDifferentStoriesReturns409ProblemDetails` e `ApiComparisonIntegrationTests.BootstrappedAdminReceivesPlusPlanAndCanRunMoreThanThreeComparisons`, contra 257 aprovados, 0 ignorados). Após a correção, GREEN com **260 testes .NET aprovados, 0 falhas e 0 ignorados** usando PostgreSQL 17 descartável (`INTEGRATION_DATABASE_URL`). `pwsh` não estava instalado neste ambiente Linux; os passos HTTP equivalentes a `scripts/Test-Comparisons.ps1` foram verificados contra `RadarPlural.Api` e base temporária `coreletter_demo_*`.
+
 ## Estado vigente — validação de 23/11/2026
 
 A PR #38 foi aprovada e integrada em 19/11/2026 (`68d08dd`); a main consultada já inclui a PR #41 (`d3f4725`, retirada de denúncias de publicações ocultadas da fila). As pendências de aprovação da #38 citadas no histórico abaixo estão encerradas.
