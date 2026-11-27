@@ -59,6 +59,7 @@
       <button (click)="notice.set('')" aria-label="Fechar aviso">×</button>
     </div>
     }
+     
     <div class="section-heading">
       <div>
         <h2>
@@ -71,40 +72,19 @@
           conteúdo.':'Mais recentes primeiro. Você escolhe o que explorar.'}}
         </p>
       </div>
-      @if(view==='stories' && usage(); as u){<span class="quota" role="status"
-        >Plano {{u.planName}} · {{u.used}} de {{u.quota}} comparações no mês</span
-      >}
-      @if(view!=='moderation' && view!=='stories'){<button class="primary" (click)="share()">
-        ＋ Compartilhar descoberta</button
-      >}
+      @if(view==='stories'){
+      <form class="filters" (ngSubmit)="filter()">
+        <label
+          ><span>Tema</span
+          ><select [(ngModel)]="storyTopic" name="storyTopic">
+            <option value="">Todos os temas</option>
+            @for(t of storyTopics;track t.value){<option [value]="t.value">{{t.label}}</option>}
+          </select></label
+        ><button class="secondary" type="submit">Filtrar</button>
+      </form>
+      }
     </div>
-    @if(view==='feed'){
-    <form class="filters" (ngSubmit)="filter()">
-      <label
-        ><span>Explorar tema</span
-        ><input
-          [(ngModel)]="topic"
-          name="topic"
-          placeholder="Ex.: inteligência artificial" /></label
-      ><label
-        ><span>Formato</span
-        ><select [(ngModel)]="type" name="type">
-          <option value="">Todos os formatos</option>
-          <option value="article">Notícias</option>
-          <option value="podcast">Podcasts</option>
-          <option value="music">Músicas</option>
-        </select></label
-      ><button class="secondary" type="submit">Filtrar</button>
-    </form>
-    } 
-    @if(view==='stories'){
- 
-    Tema
-    Todos os temas
-    @for(t of storyTopics;track t.value){{{t.label}}}
-      
-       }
-    
+
     @if(loading()){
     <div class="empty" role="status">Carregando descobertas…</div>
     }@else if(view==='stories'){
@@ -138,7 +118,9 @@
         }
       </article>
       }@empty{
-      {{storyTopic ? 'Nenhuma história com 2 ou mais fontes neste tema ainda.' : 'Ainda não há histórias contadas por 2 ou mais fontes. O coletor roda a cada 3 horas.'}}
+      <div class="empty">
+        {{storyTopic ? 'Nenhuma história com 2 ou mais fontes neste tema ainda.' : 'Ainda não há histórias contadas por 2 ou mais fontes. O coletor roda a cada 3 horas.'}}
+      </div>
       }
     </div>
     }@else if(view==='moderation'){@for(report of reports();track report.id){
@@ -224,12 +206,14 @@
     }
     <footer>
       Fontes externas expressam a visão de seus autores. Consulte o conteúdo
-      original e compare perspectivas.<br /><span
-        >Comparação com IA e planos pagos: previstos para uma próxima
-        entrega.</span
-      >
+      original e compare perspectivas.<br />
+      <span>
+        Comparação com IA e planos pagos: previstos para uma próxima
+        entrega.
+      </span>
     </footer>
   </main>
+  
 </div>
 @if(authOpen){
 <div class="overlay">
