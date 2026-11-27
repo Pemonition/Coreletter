@@ -134,12 +134,17 @@ if (migrateOnly || builder.Configuration.GetValue("Database:MigrateOnStartup", t
     var adminEmail = builder.Configuration["BootstrapAdminEmail"];
     if (!string.IsNullOrWhiteSpace(adminEmail))
     {
-        var admin = await db.Members.SingleOrDefaultAsync(x => x.Email == adminEmail.ToLowerInvariant());
+        // Trim: um espaço colado no painel do Render ou no .env fazia a promoção falhar em silêncio.
+        var normalizedEmail = adminEmail.Trim().ToLowerInvariant();
+        var admin = await db.Members.SingleOrDefaultAsync(x => x.Email == normalizedEmail);
         if (admin is not null)
         {
             admin.IsAdmin = true;
             await db.SaveChangesAsync();
         }
+        // Sem o e-mail no log (dado pessoal); o aviso basta para saber se a promoção aconteceu.
+        if (admin is null) app.Logger.LogWarning("BootstrapAdminEmail definido, mas nenhuma conta tem esse e-mail. Cadastre a conta e reinicie a API.");
+        else app.Logger.LogInformation("BootstrapAdminEmail: conta promovida a administradora.");
     }
 }
 // Vivo (liveness): só diz que o processo responde. NÃO consulta o banco: se consultasse, uma queda do banco
