@@ -22,7 +22,7 @@ Regulamento, seção 5: a regra precisa estar **no código que concentra as regr
 |---|---|---|
 | **RN01** | Quota mensal de comparações por plano. A 61ª comparação do Plus no mês é recusada | Plus usou 59 → permite; usou 60 → `quota_esgotada` |
 | **RN02** | Margem mínima: nenhum plano pode dar prejuízo no pior caso (cliente usa a quota inteira). Preço ≥ custo ÷ (1 − 25%). **A API não inicia** se um plano violar | Plus: custo máx. = 60 × 0,08 + 0,50 = **R$ 5,30**; margem = (19,90 − 5,30) ÷ 19,90 = **73,4%**; preço mínimo = 5,30 ÷ 0,75 = **R$ 7,07**. A R$ 7,06 a API recusa subir |
-| **RN03** | Custo de IA reservado **antes** de chamar o provedor, de forma atômica no banco (vale com várias réplicas); liquidado no sucesso, devolvido na falha; mesma chave não cobra duas vezes | 50 pedidos simultâneos com quota 10 → exatamente 10 aprovados |
+| **RN03** | Custo de IA reservado **antes** de chamar o provedor, de forma atômica no banco (vale com várias réplicas); liquidado no sucesso, devolvido na falha; mesma chave não cobra duas vezes (reuso sem cache retorna `409 chave_reutilizada`) | 50 pedidos simultâneos com quota 10 → exatamente 10 aprovados |
 | **RN04** | Ponto de equilíbrio: assinantes Plus necessários para pagar o custo fixo | 800 ÷ (19,90 − 5,30) = 54,8 → **55 assinantes** |
 
 ## Casos limite testados
@@ -35,4 +35,4 @@ Regulamento, seção 5: a regra precisa estar **no código que concentra as regr
 - Banco: concorrência, idempotência, devolução única, liquidação, virada de mês.
 
 ## Para mostrar na apresentação
-`GET /api/plans` devolve todos esses números ao vivo. `GET /api/me/usage` mostra a quota do usuário logado. O administrador troca o plano com `PUT /api/admin/members/{id}/plan`.
+`GET /api/plans` devolve todos esses números ao vivo. `GET /api/me/usage` mostra a quota do usuário logado. O administrador troca o plano com `PUT /api/admin/members/{id}/plan`, e a conta promovida via `BootstrapAdminEmail` recebe automaticamente o plano `plus` (60/mês) sem abrir exceção na regra de quota.
