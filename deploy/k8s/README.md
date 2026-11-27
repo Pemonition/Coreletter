@@ -20,7 +20,7 @@ Deploy **alternativo** para estudo e para a banca. A demo pública continua no R
    docker build -t coreletter-api:local .
    docker build -f Dockerfile.worker -t coreletter-worker:local .
    ```
-3. Banco: use o PostgreSQL do `compose.yaml` (`docker compose up -d db`). De dentro do cluster ele é `host.docker.internal:5433`.
+3. Banco: use o PostgreSQL do `compose.yaml` (`docker compose up -d postgres`). De dentro do cluster ele é `host.docker.internal:5433`.
 4. Namespace, configuração e **segredo** (nunca versionar o segredo):
    ```powershell
    kubectl apply -f deploy/k8s/00-namespace.yaml -f deploy/k8s/01-config.yaml
