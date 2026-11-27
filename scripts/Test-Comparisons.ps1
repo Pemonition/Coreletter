@@ -1,4 +1,4 @@
-# Execute depois de Seed-Demo.sql numa base local descartável e nova.
+﻿# Execute depois de Seed-Demo.sql numa base local descartável e nova.
 param([string]$BaseUrl = 'http://localhost:5093')
 $ErrorActionPreference = 'Stop'
 $taskUri = [Uri]$BaseUrl
@@ -38,7 +38,9 @@ Check ($taskResult.usage.units -eq 1) 'Primeira comparação consome uma unidade
 Expect (Request POST '/comparisons' @{ storyId = (StoryId 1) } @{ 'Idempotency-Key' = $taskKey }) 200 'Repetição da mesma solicitação'
 $taskUsage = (Request GET '/me/usage').Content | ConvertFrom-Json
 Check ($taskUsage.used -eq 1) 'Repetição/cache não desconta novamente'
-Expect (Request POST '/comparisons' @{ storyId = (StoryId 4) } @{ 'Idempotency-Key' = $taskKey }) 503 'Chave de outra história não autoriza execução gratuita'
+$taskReused = Request POST '/comparisons' @{ storyId = (StoryId 4) } @{ 'Idempotency-Key' = $taskKey }
+Expect $taskReused 409 'Chave de outra história não autoriza execução gratuita'
+Check (($taskReused.Content | ConvertFrom-Json).code -eq 'chave_reutilizada') 'Código chave_reutilizada no conflito de idempotência'
 foreach ($taskNumber in 2..3) {
     Expect (Request POST '/comparisons' @{ storyId = (StoryId $taskNumber) } @{ 'Idempotency-Key' = [Guid]::NewGuid().ToString() }) 200 'Comparação dentro da quota'
 }

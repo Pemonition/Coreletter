@@ -81,6 +81,7 @@ Feita por código, não por IA:
 | 401 | — | Sem login | Não |
 | 403 | `quota_esgotada` | Plano sem comparações restantes no mês | Não |
 | 404 | — | `storyId` inexistente | Não |
+| 409 | `chave_reutilizada` | `Idempotency-Key` já utilizada em outra comparação sem cache reutilizável (`ProblemDetails` com `code`) | Não |
 | 503 | `provedor_indisponivel` | Provedor de IA falhou ou excedeu tempo | **Não**: a reserva é liberada |
 
 Formato: `{ "error": "mensagem", "code": "quota_esgotada" }` (mantém o `{error}` do `API.md`).
