@@ -138,6 +138,7 @@ if (migrateOnly || builder.Configuration.GetValue("Database:MigrateOnStartup", t
         if (admin is not null)
         {
             admin.IsAdmin = true;
+            admin.PlanId = RadarPlural.Domain.Billing.PlanCatalog.Plus.Id;
             await db.SaveChangesAsync();
         }
     }
