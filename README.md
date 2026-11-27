@@ -53,6 +53,18 @@ Isso executa os testes do back-end e o build Angular; testes com PostgreSQL e fl
 
 Com a API e um banco descartável em execução, `pwsh -File scripts/Test-Api.ps1` verifica cadastro, publicação, permissões e isolamento de salvos. Ele cria contas fictícias e remove a publicação de teste. A CI executa esse cenário usando PostgreSQL descartável.
 
+## Demonstração local com um comando (Docker)
+
+Para mostrar o projeto sem abrir três terminais: com o `.env` criado (passo acima) e o Docker Desktop aberto, na raiz:
+
+```powershell
+docker compose up --build
+```
+
+Abra http://localhost:8080 (API e Angular na mesma imagem do Render; documentação da API em http://localhost:8080/docs). A API só sobe depois que o banco responde, e o `docker compose ps` mostra `healthy` quando ela já alcança o banco. Para a conta de administração, cadastre a conta na tela, coloque `BootstrapAdminEmail=<o e-mail>` no `.env` e rode `docker compose up -d api` (o log diz se a promoção aconteceu). Para coletar notícias para esse banco, rode o coletor como na seção abaixo. Para parar: `docker compose stop`.
+
+Para desenvolver (recarga automática do Angular, depuração da API), continue com os scripts acima.
+
 ## Vídeos (HyperFrames)
 
 Roteiro em JSON → composição HTML/GSAP → MP4 com a marca do projeto. Primeiro vídeo: "Como o Coreletter funciona". Guia completo, com o passo a passo no Windows: [video/README.md](video/README.md).
