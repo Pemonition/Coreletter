@@ -168,4 +168,46 @@ public class ApiComparisonIntegrationTests(PostgresFixture pg)
         Assert.Equal(409, body.RootElement.GetProperty("status").GetInt32());
         Assert.Equal("chave_reutilizada", body.RootElement.GetProperty("code").GetString());
     }
+
+    [IntegrationFact]
+    public async Task BootstrappedAdminReceivesPlusPlanAndCanRunMoreThanThreeComparisons()
+    {
+        await ResetAsync();
+        var stories = new List<Guid>();
+        for (var i = 1; i <= 4; i++) stories.Add(await SeedCorroboratedStoryAsync($"admin-{i}"));
+
+        var email = $"admin-{Guid.NewGuid():N}@example.invalid";
+        const string password = "SenhaAdminTeste123!";
+        var member = new Member { Email = email, DisplayName = "Admin Demo", PlanId = "free", IsAdmin = false };
+        member.PasswordHash = new PasswordHasher<Member>().HashPassword(member, password);
+        await pg.ExecAsync("""
+            INSERT INTO "Members" ("Id", "Email", "DisplayName", "PasswordHash", "PlanId", "IsAdmin")
+            VALUES ($1, $2, $3, $4, $5, $6)
+            """, member.Id, member.Email, member.DisplayName, member.PasswordHash, member.PlanId, member.IsAdmin);
+
+        await using var api = await ApiServer.StartAsync(ApiConnectionString(), bootstrapAdminEmail: email);
+        using var client = api.CreateClient();
+
+        var login = await client.PostAsJsonAsync("/api/auth/login", new { email, password });
+        Assert.Equal(HttpStatusCode.OK, login.StatusCode);
+
+        using var me = JsonDocument.Parse(await (await client.GetAsync("/api/auth/me")).Content.ReadAsStringAsync());
+        Assert.True(me.RootElement.GetProperty("isAdmin").GetBoolean());
+
+        using var usage = JsonDocument.Parse(await (await client.GetAsync("/api/me/usage")).Content.ReadAsStringAsync());
+        Assert.Equal("plus", usage.RootElement.GetProperty("planId").GetString());
+        Assert.Equal(60, usage.RootElement.GetProperty("quota").GetInt32());
+        Assert.Equal("plus", await pg.ScalarAsync<string>("""SELECT "PlanId" FROM "Members" WHERE "Id" = $1""", member.Id));
+
+        foreach (var storyId in stories)
+        {
+            using var req = new HttpRequestMessage(HttpMethod.Post, "/api/comparisons")
+            {
+                Content = JsonContent.Create(new { storyId })
+            };
+            req.Headers.Add("Idempotency-Key", Guid.NewGuid().ToString());
+            var response = await client.SendAsync(req);
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+    }
 }
