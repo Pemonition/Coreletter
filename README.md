@@ -8,6 +8,12 @@ Base inicial publicada: ASP.NET Core .NET 10, PostgreSQL e Angular. O primeiro i
 
 Esta base já inclui coleta RSS/Atom controlada, histórias entre veículos, comparação **simulada**, planos e quota persistente. IA real e cobrança continuam fora da entrega. Compartilhar uma URL não baixa seu conteúdo. Não há transcrição de áudio ou postagem em redes sociais. Consulte a [validação local de 23/11](docs/VALIDACAO-LOCAL-2026-11-23.md) para evidências, limites e roteiro de demonstração sem internet.
 
+## Capturas de tela
+
+> TODO: adicionar capturas da demonstração local (contas e conteúdos fictícios) em `docs/screenshots/`
+> e referenciá-las aqui. Sugestão: `feed.png` (feed com filtros), `historias.png` (histórias entre
+> veículos) e `moderacao.png` (denúncia/moderação).
+
 ## Executar no PowerShell
 
 Pré-requisitos: PowerShell 7 (`pwsh`), SDK .NET 10, Node compatível com a versão Angular fixada no frontend/package.json, npm e Docker Desktop em execução. Instale dependências com `dotnet restore backend/RadarPlural.slnx` e `npm ci --prefix frontend`.
