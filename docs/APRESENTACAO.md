@@ -2,6 +2,8 @@
 
 Estado: **rascunho** do tech lead para a equipe completar. Duração-alvo: 5 a 8 min de demonstração. Requisito da B10: funcionar **sem internet**, cada aluno explica seu código e um teste, limitações explícitas.
 
+Perguntas prováveis da banca, respostas com o código e plano B: [APRESENTACAO-PERGUNTAS.md](APRESENTACAO-PERGUNTAS.md).
+
 ## Princípios
 - **Sem internet:** banco local com dados já coletados (snapshot fictício ou de fontes permitidas) e adaptadores **simulados** de IA e vídeo. Nada depende do Render, do Gemini nem do HyperFrames ao vivo.
 - **Vídeo pré-renderizado:** o vídeo de exemplo (HyperFrames) é gerado antes e aberto como arquivo.
