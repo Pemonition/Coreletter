@@ -65,6 +65,24 @@ Abra http://localhost:8080 (API e Angular na mesma imagem do Render; documentaç
 
 Para desenvolver (recarga automática do Angular, depuração da API), continue com os scripts acima.
 
+## Plano B sem Docker (PostgreSQL instalado no Windows)
+
+Se o Docker Desktop não abrir, os binários do PostgreSQL instalado (testado com o 17 em `C:\Program Files\PostgreSQL\17`) criam um banco **descartável** numa pasta própria, em outra porta, sem mexer no serviço PostgreSQL já instalado nem na senha dele. Validado em 27/11/2026 no commit 3ab271d. No PowerShell, na raiz:
+
+```powershell
+$pg = 'C:\Program Files\PostgreSQL\17\bin'
+& "$pg\initdb.exe" -D "$env:TEMP\coreletter-pg" -U radarplural -A trust -E UTF8 --locale=C
+& "$pg\pg_ctl.exe" -D "$env:TEMP\coreletter-pg" -o "-p 5434 -c listen_addresses=127.0.0.1" -l "$env:TEMP\coreletter-pg.log" start
+& "$pg\psql.exe" -h 127.0.0.1 -p 5434 -U radarplural -d postgres -c "create database radarplural;"
+
+$env:ConnectionStrings__Default = 'Host=127.0.0.1;Port=5434;Database=radarplural;Username=radarplural;Password=local'
+$env:ASPNETCORE_ENVIRONMENT = 'Development'
+$env:BootstrapAdminEmail = 'admin@demo.example'   # opcional: conta de administração (plano plus)
+dotnet run --project backend/RadarPlural.Api --urls http://localhost:5080
+```
+
+`-A trust` dispensa senha e só aceita conexões de `127.0.0.1`: use apenas para dados fictícios. Em outro PowerShell, com o mesmo `ConnectionStrings__Default`, colete notícias com `dotnet run --project backend/RadarPlural.Worker` e abra o front com `npm start --prefix frontend` (http://localhost:4200, proxy para a porta 5080). Cadastrar a conta de `BootstrapAdminEmail` exige reiniciar a API uma vez para a promoção. Os testes de integração rodam no mesmo servidor com `$env:INTEGRATION_DATABASE_URL = 'Host=127.0.0.1;Port=5434;Database=postgres;Username=radarplural;Password=local'`. Para parar: `& "$pg\pg_ctl.exe" -D "$env:TEMP\coreletter-pg" stop`; para descartar, apague a pasta `coreletter-pg`.
+
 ## Vídeos (HyperFrames)
 
 Roteiro em JSON → composição HTML/GSAP → MP4 com a marca do projeto. Primeiro vídeo: "Como o Coreletter funciona". Guia completo, com o passo a passo no Windows: [video/README.md](video/README.md).
